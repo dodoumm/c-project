@@ -1,6 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include "json.h"
 
 int main(){
-    printf("starting");
+    testjson();
+    printf("testcode");
     return 0;
 }
