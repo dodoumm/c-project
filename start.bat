@@ -1,6 +1,6 @@
 @echo off
 
-set SRC=src/main.c src/window.c
+set SRC=src/main.c src/json.c
 set INCLUDE=-Iheader
 
 gcc %SRC% %INCLUDE% -o program.exe

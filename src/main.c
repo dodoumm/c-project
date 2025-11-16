@@ -1,9 +1,9 @@
 #include <stdio.h>
-#include "window.h"
+#include <stdlib.h>
+#include "json.h"
 
 int main(){
-    //printf("starting");
-    window_init(10,10,10,10);
-    //s
+    testjson();
+    printf("testcode");
     return 0;
 }
