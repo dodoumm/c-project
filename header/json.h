@@ -1,7 +1,44 @@
 //#ifndef JSON.H
 //#define JSON.H
+#include <stdbool.h>
+
+typedef struct{
+    void*value;
+    unsigned char type;
+} JSON;
+
+//type1~4 | 1:int 2:float 3:bool 4:string 5:array 6:object  / 7:element
+typedef struct{
+    char* tag; //string or null
+    unsigned char TYPE_VALUE;
+    void* value; //기본 타입중 하나 | array나 object일 경우 JSON_ELEMENT
+    void*linked; //JSON_COMPONENTS 또는 JSON_OBJECT
+    unsigned char TYPE_LINK; //0:NULL
+} JSON_COMPONENTS;
+
+//type5~6 | 5:array 6:object
+typedef struct JSEL{
+    //char* tag; //string or null
+    unsigned char TYPE_VALUE;
+    void* value; //기본 타입중 하나
+    struct JSEL*linked;
+} JSON_ELEMENT;
+
+JSON_COMPONENTS *new_JSON_INT(char*tag,int value,JSON_COMPONENTS*linked);
+
+JSON_COMPONENTS *new_JSON_FLOAT(char*tag,float value,JSON_COMPONENTS*linked);
+
+JSON_COMPONENTS *new_JSON_BOOL(char*tag,bool value,JSON_COMPONENTS*linked);
+
+JSON_COMPONENTS *new_JSON_STRING(char*tag,char* value,JSON_COMPONENTS*linked);
+
+JSON_COMPONENTS *new_JSON_ARRAY(char*tag,JSON_ELEMENT *value,JSON_COMPONENTS*linked);
+
+JSON_COMPONENTS *new_JSON_OBJECT(char*tag,JSON_ELEMENT *value,JSON_COMPONENTS*linked);
+
+JSON_ELEMENT *new_JSON_ELEMENT(JSON_COMPONENTS*value,JSON_ELEMENT*linked);
 
 
-int testjson();
+JSON* testjson();
 
 //#endif

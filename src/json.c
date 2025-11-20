@@ -2,58 +2,91 @@
 #include <stdlib.h>
 #include "json.h"
 
-typedef struct
-{
-    void*value;
-} JSON_VALUE;
 
-//type5
-typedef struct JSEL{
-    void*value;
-    struct JSEL*linked;
-} JSON_ELEMENT;
+JSON_COMPONENTS *new_JSON_INT(char*tag,int value,JSON_COMPONENTS*linked){
+    int*v = malloc(sizeof(int));
+    *v=value;
+    JSON_COMPONENTS * data = malloc(sizeof(JSON_COMPONENTS));
+    data->tag=tag;
+    data->TYPE_VALUE=1;
+    data->TYPE_LINK=linked?linked->TYPE_VALUE:0;
+    data->linked=linked;
+    data->value=v;
+    //printf("INTTAG:%s|value:%d\n",tag,value);
+    return data;
+};
 
-//type7
-typedef struct{
-    JSON_ELEMENT* value;
-    void*linked;
-} JSON_OBJECT;
+JSON_COMPONENTS *new_JSON_FLOAT(char*tag,float value,JSON_COMPONENTS*linked){
+    float*v = malloc(sizeof(float));
+    *v=value;
+    JSON_COMPONENTS * data = malloc(sizeof(JSON_COMPONENTS));
+    data->tag=tag;
+    data->TYPE_VALUE=2;
+    data->TYPE_LINK=linked?linked->TYPE_VALUE:0;
+    data->linked=linked;
+    data->value=v;
+    //printf("FLOATTAG:%s|value:%f\n",tag,value);
+    return data;
+};
 
-//type6
-typedef struct{
-    JSON_ELEMENT* value;
-    void*linked;
-} JSON_ARRAY;
+JSON_COMPONENTS *new_JSON_BOOL(char*tag,bool value,JSON_COMPONENTS*linked){   
+    bool*v = malloc(sizeof(bool));
+    *v=value;
+    JSON_COMPONENTS * data = malloc(sizeof(JSON_COMPONENTS));
+    data->tag=tag;
+    data->TYPE_VALUE=3;
+    data->TYPE_LINK=linked?linked->TYPE_VALUE:0;
+    data->linked=linked;
+    data->value=v;
+    //printf("BOOLTAG:%s|value:%d\n",tag,value);
+    return data;
+};
+
+JSON_COMPONENTS *new_JSON_STRING(char*tag,char* value,JSON_COMPONENTS*linked){
+    JSON_COMPONENTS * data = malloc(sizeof(JSON_COMPONENTS));
+    data->tag=tag;
+    data->TYPE_VALUE=4;
+    data->TYPE_LINK=linked?linked->TYPE_VALUE:0;
+    data->linked=linked;
+    data->value=value;
+    //printf("STRINGTAG:%s|value:%s\n",tag,value);
+    return data;
+};
+
+JSON_COMPONENTS *new_JSON_ARRAY(char*tag,JSON_ELEMENT *value,JSON_COMPONENTS*linked){
+    JSON_COMPONENTS * data = malloc(sizeof(JSON_COMPONENTS));
+    data->tag=tag;
+    data->TYPE_VALUE=5;
+    data->TYPE_LINK=linked?linked->TYPE_VALUE:0;
+    data->linked=linked;
+    data->value=value;
+    //printf("ARRAYTAG:%s|value:[]\n",tag);
+    return data;
+};
+
+JSON_COMPONENTS *new_JSON_OBJECT(char*tag,JSON_ELEMENT *value,JSON_COMPONENTS*linked){
+    JSON_COMPONENTS * data = malloc(sizeof(JSON_COMPONENTS));
+    data->tag=tag;
+    data->TYPE_VALUE=6;
+    data->TYPE_LINK=linked?linked->TYPE_VALUE:0;
+    data->linked=linked;
+    data->value=value;
+    //printf("OBJECTTAG:%s|value:{}\n",tag);
+    return data;
+
+};
+
+JSON_ELEMENT *new_JSON_ELEMENT(JSON_COMPONENTS*value,JSON_ELEMENT*linked){
+    JSON_ELEMENT * data = malloc(sizeof(JSON_ELEMENT));
+    data->TYPE_VALUE=7;
+    data->linked=linked;
+    data->value=value;
+    //printf("ELEMENT:%s|value:...\n",value->tag);
+    return data;
+};
 
 
-//type1
-typedef struct{
-    char* tag;
-    int value;
-    void*linked;
-} JSON_INT;
-
-//type2
-typedef struct{
-    char* tag;
-    float value;
-    void*linked;
-} JSON_FLOAT;
-
-//type3
-typedef struct{
-    char* tag;
-    int value;
-    void*linked;
-} JSON_BOOL;
-
-//type4
-typedef struct{
-    char* tag;
-    char* value;
-    void*linked;
-} JSON_STRING;
-
+JSON* testjson();
 
 /*
 {
@@ -71,24 +104,24 @@ typedef struct{
     ]
 }
 */
-JSON_VALUE dataset;
-int testjson(){
-    JSON_STRING lore1 = {"", "1", NULL};
-    JSON_STRING lore0 = {"", "0", &lore1};
-    JSON_ELEMENT lore_el1 = {&lore1, NULL};
-    JSON_ELEMENT lore_el0 = {&lore0, &lore_el1};
-    JSON_ARRAY lore = {&lore_el0,NULL};
-    JSON_STRING item = {"item", "sss", &lore};
-    JSON_ELEMENT itemo_el1 = {&lore,NULL};
-    JSON_ELEMENT itemo_el0 = {&item,&itemo_el1};
-    JSON_OBJECT itemo = {&itemo_el0,NULL};
-    JSON_ELEMENT itema = {&itemo,NULL};
-    JSON_ARRAY items = {&itema,NULL};
-    JSON_STRING moneyid = {"moneyid", "won", &items};
-    JSON_STRING name = {"name", "상점", &moneyid};
-    JSON_STRING shopid = {"shopid", "shop1", &name};
-    dataset.value = &shopid;
+JSON* testjson(){
+    JSON *dataset = malloc(sizeof(JSON));
+    JSON_COMPONENTS *lore1 = new_JSON_STRING("","1",NULL);//{"", "1", NULL};
+    JSON_COMPONENTS *lore0 = new_JSON_STRING("","0",lore1);//{"", "0", &lore1};
+    JSON_ELEMENT *lore_el1 = new_JSON_ELEMENT(lore1,NULL);//{&lore1, NULL};
+    JSON_ELEMENT *lore_el0 = new_JSON_ELEMENT(lore1,lore_el1);//{&lore0, &lore_el1};
+    JSON_COMPONENTS *lore = new_JSON_ARRAY(NULL,lore_el0,NULL);//{&lore_el0,NULL};
+    JSON_COMPONENTS *item = new_JSON_STRING("item","sss",lore);//{"item", "sss", &lore};
+    JSON_ELEMENT *itemo_el1 = new_JSON_ELEMENT(lore,NULL);//{&lore,NULL};
+    JSON_ELEMENT *itemo_el0 = new_JSON_ELEMENT(item,itemo_el1);//{&item,&itemo_el1};
+    JSON_COMPONENTS *itemo = new_JSON_OBJECT(NULL,itemo_el0,NULL);//{&itemo_el0,NULL};
+    JSON_ELEMENT *itema = new_JSON_ELEMENT(itemo,NULL);//{&itemo,NULL};
+    JSON_COMPONENTS *items = new_JSON_ARRAY("lore",itema,NULL);//{&itema,NULL};
+    JSON_COMPONENTS *moneyid = new_JSON_STRING("moneyid","won",items);//{"moneyid", "won", &items};
+    JSON_COMPONENTS *name = new_JSON_STRING("name","상점",moneyid);//{"name", "상점", &moneyid};
+    JSON_COMPONENTS *shopid = new_JSON_STRING("shopid","shop1",name);//{"shopid", "shop1", &name};
+    dataset->value = &shopid;
     //
-    item.linked;//array
-    return 0;
+    //item->linked;//array
+    return dataset;
 }
