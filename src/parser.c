@@ -91,6 +91,30 @@ PARSER_SINGLEDATA _PARSER_EXTRACTION(FILE*file){
 }
 
 //앞에 { 가 나왔을때
+//array 와의 차이점: 키값이 존재, }로 끝남
+JSON_COMPONENTS *_PARSER_OBJ(FILE*file,JSON_COMPONENTS*before,char *tagkey){
+    int ch;
+    //반환값:최상위 객체의 원소값
+    JSON_ELEMENT *el = NULL;
+    //반환값:최상위 객체
+    JSON_COMPONENTS *obj = malloc(sizeof(JSON_COMPONENTS));
+    obj->tag=tagkey;
+    obj->TYPE_VALUE=5;
+    obj->value=el;
+    obj->TYPE_LINK=0;
+    obj->linked=NULL;
+        //첫번째 원소
+    //PARSER_SINGLEDATA v = _PARSER_EXTRACTION(file);
+    JSON_COMPONENTS*res;
+    while (1)
+    {
+    char * tag = _PARSER_STR(file);
+    if(tag==NULL) return NULL;//태그 없음
+    return obj;
+    }
+}
+
+/*
 JSON_COMPONENTS *_PARSER_OBJ(FILE*file,JSON_COMPONENTS*before,char *tagkey){
     int ch;
     JSON_ELEMENT *el = NULL;
@@ -211,68 +235,48 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,JSON_COMPONENTS*before,char *tagkey){
     }
     return obj;
 }
-
+*/
 //앞에 [ 가 나왔을때
-JSON_COMPONENTS *_PARSER_ARR(FILE*file,JSON_COMPONENTS*before,char *tagkey){
+JSON_COMPONENTS *_PARSER_ARR(FILE*file,char *tagkey){
     int ch;
     //반환값:최상위 객체의 원소값
     JSON_ELEMENT *el = NULL;
     //반환값:최상위 객체
-    JSON_COMPONENTS *obj = malloc(sizeof(JSON_COMPONENTS));
-    obj->tag=tagkey;
-    obj->TYPE_VALUE=5;
-    obj->value=el;
-    obj->TYPE_LINK=0;
-    obj->linked=NULL;
-        //첫번째 원소
+    JSON_COMPONENTS *obj = new_JSON_ARRAY(tagkey,el,NULL);
+    //첫번째 원소 : 가장 처음에 el값을 초기화해주는 목적(반복문에서 한번씩 확인하는거보다 효율적)
     PARSER_SINGLEDATA v = _PARSER_EXTRACTION(file);
-    JSON_COMPONENTS*res;
+    JSON_COMPONENTS*res;//json 원소의 값을 담는 변수
+    //(*obj).value=el; => 가장 처음에 el값을 초기화해주기 때문에 value로 처리
     switch (v.TYPE_VALUE){
         case 1:
             res = new_JSON_INT(NULL,*(int*)v.value,NULL);
-            el = malloc(sizeof(JSON_ELEMENT));
-            el->value = res;
-            el->TYPE_VALUE = 1;
-            el->linked=NULL;
-            (*obj).value=el;
+            el=new_JSON_ELEMENT(res,NULL);
+            obj->value=el;
             printf("  { ARR_INT_F:%d }\n",*(int*)res->value);
             break;
         case 2:
-        //printf("\n\ntest2\n\n");
             res = new_JSON_FLOAT(NULL,*(float*)v.value,NULL);
-            el = malloc(sizeof(JSON_ELEMENT));
-            el->value = res;
-            el->TYPE_VALUE = 2;
-            el->linked=NULL;
-            (*obj).value=el;
+            el=new_JSON_ELEMENT(res,NULL);
+            obj->value=el;
             printf("  { ARR_FLOAT_F:%f }\n",*(float*)res->value);
             break;
         case 3:
-        //printf("\n\ntest3\n\n");
             res = new_JSON_BOOL(NULL,*(bool*)v.value,NULL);
-            el = malloc(sizeof(JSON_ELEMENT));
-            el->value = res;
-            el->TYPE_VALUE = 3;
-            el->linked=NULL;
-            (*obj).value=el;
+            el=new_JSON_ELEMENT(res,NULL);
+            obj->value=el;
             printf("  { ARR_BOOL_F:%d }\n",*(bool*)res->value);
             break;
         case 4:
             res = new_JSON_STRING(NULL,(char*)v.value,NULL);
-            el = malloc(sizeof(JSON_ELEMENT));
-            el->value = res;
-            el->TYPE_VALUE = 4;
-            el->linked=NULL;
-            (*obj).value=el;
+            el=new_JSON_ELEMENT(res,NULL);
+            obj->value=el;
             printf("  { ARR_STRING_F:%s }\n",(char*)res->value);
             break;
         case 5://배열
-            res = _PARSER_ARR(file,res,NULL);
-            JSON_ELEMENT *temp=el;
-            el = malloc(sizeof(JSON_ELEMENT));
-            el->value = res;
-            el->TYPE_VALUE = 5;
-            el->linked=temp;
+            JSON_COMPONENTS * temp_array = res;
+            res = _PARSER_ARR(file,NULL);
+            el=new_JSON_ELEMENT(res,NULL);
+            obj->value=el;
             printf("    { ARR_ARR_F:[] }\n");
             break;
         case 6://객체
@@ -280,114 +284,67 @@ JSON_COMPONENTS *_PARSER_ARR(FILE*file,JSON_COMPONENTS*before,char *tagkey){
         default:
             return NULL;//유효하지 않은 typeid
     }
+    if(v.thischar==']'){
+        fgetc(file);
+        printf("ARR_ARR_CLOSE:[]\n");
+        //before->linked=obj;
+        //before->TYPE_LINK = obj->TYPE_VALUE;
+        return obj;
+    }
     while(1){
-            //2~끝까지 원소
             v = _PARSER_EXTRACTION(file);
             if(v.TYPE_VALUE==0) break;
             switch (v.TYPE_VALUE){
                 case 1:
                     res = new_JSON_INT(NULL,*(int*)v.value,NULL);
-                    if(el==NULL){
-                        el = malloc(sizeof(JSON_ELEMENT));
-                        el->value = res;
-                        el->TYPE_VALUE = 1;
-                        el->linked=NULL;
-                        (*obj).value=el;
-                    }else{
-                        JSON_ELEMENT *temp=el;
-                        el = malloc(sizeof(JSON_ELEMENT));
-                        el->value = res;
-                        el->TYPE_VALUE = 1;
-                        el->linked=temp;
-                    }
+                    el->linked=new_JSON_ELEMENT(res,NULL);
+                    el=el->linked;
                     printf("  { ARR_INT:%d }\n",*(int*)res->value);
                     break;
                 case 2:
                     res = new_JSON_FLOAT(NULL,*(float*)v.value,NULL);
-                    if(el==NULL){
-                        el = malloc(sizeof(JSON_ELEMENT));
-                        el->value = res;
-                        el->TYPE_VALUE = 2;
-                        el->linked=NULL;
-                        (*obj).value=el;
-                    }else{
-                        JSON_ELEMENT *temp=el;
-                        el = malloc(sizeof(JSON_ELEMENT));
-                        el->value = res;
-                        el->TYPE_VALUE = 2;
-                        el->linked=temp;
-                    }
+                    el->linked=new_JSON_ELEMENT(res,NULL);
+                    el=el->linked;
                     printf("  { ARR_FLOAT:%f }\n",*(float*)res->value);
                     break;
                 case 3:
                     res = new_JSON_BOOL(NULL,*(bool*)v.value,NULL);
-                    if(el==NULL){
-                        el = malloc(sizeof(JSON_ELEMENT));
-                        el->value = res;
-                        el->TYPE_VALUE = 3;
-                        el->linked=NULL;
-                        (*obj).value=el;
-                    }else{
-                        JSON_ELEMENT *temp=el;
-                        el = malloc(sizeof(JSON_ELEMENT));
-                        el->value = res;
-                        el->TYPE_VALUE = 3;
-                        el->linked=temp;
-                    }
+                    el->linked=new_JSON_ELEMENT(res,NULL);
+                    el=el->linked;
                     printf("  { ARR_BOOL:%d }\n",*(bool*)res->value);
                     break;
                 case 4:
                     res = new_JSON_STRING(NULL,(char*)v.value,NULL);
-                    if(el==NULL){
-                        el = malloc(sizeof(JSON_ELEMENT));
-                        el->value = res;
-                        el->TYPE_VALUE = 4;
-                        el->linked=NULL;
-                        (*obj).value=el;
-                    }else{
-                        JSON_ELEMENT *temp=el;
-                        el = malloc(sizeof(JSON_ELEMENT));
-                        el->value = res;
-                        el->TYPE_VALUE = 4;
-                        el->linked=temp;
-                    }
+                    el->linked=new_JSON_ELEMENT(res,NULL);
+                    el=el->linked;
                     printf("  { ARR_STRING:%s }\n",(char*)res->value);
                     break;
                 case 5://배열
                     printf("    { ARR_ARR:[] }\n");
-                    res = _PARSER_ARR(file,res,NULL);
-                    //printf("ARR_ARR_END:[]");
-                    if(el==NULL){
-                        el = malloc(sizeof(JSON_ELEMENT));
-                        el->value = res;
-                        el->TYPE_VALUE = 5;
-                        el->linked=NULL;
-                        (*obj).value=el;
-                    }else{
-                        JSON_ELEMENT *temp=el;
-                        el = malloc(sizeof(JSON_ELEMENT));
-                        el->value = res;
-                        el->TYPE_VALUE = 5;
-                        el->linked=temp;
-                    }
+                    JSON_COMPONENTS * temp_array = res;
+                    res = _PARSER_ARR(file,NULL);
+                    el->linked=new_JSON_ELEMENT(res,NULL);
+                    el=el->linked;
                     break;
                 case 6://객체
+                    break;
                 default:
+                printf("NULLED\n");
                     return NULL;//유효하지 않은 typeid
-            }
-            
-            if(v.thischar==']'){
-                fgetc(file);
-                printf("ARR_ARR_CLOSE:[]\n");
-            (*obj).linked=before;
-            (*obj).TYPE_LINK=before->TYPE_VALUE;
-            break;
-            }
+                }
+                printf("LAST:[%c]\n",v.thischar);
+                if(v.thischar==']'){
+                    fgetc(file);
+                    printf("ARR_ARR_CLOSE:[]\n");
+                    //before->linked=obj;
+                    //before->TYPE_LINK = obj->TYPE_VALUE;
+                    break;
+                }
     }
     return obj;
 }
 
-JSON *_PARSER_PARSER(char*path){
+JSON *PARSER_PARSE(char*path){
     FILE* file = fopen(path,"r");
     if(file==NULL){
         printf("파일을 읽을 수 없음");
@@ -395,6 +352,7 @@ JSON *_PARSER_PARSER(char*path){
     }
     JSON*json = malloc(sizeof(JSON));
     JSON_COMPONENTS *components=malloc(sizeof(JSON_COMPONENTS));
+    const const JSON_COMPONENTS*components_CONST = components;//원본 components
     json->value=components;
     json->type=0;
     
@@ -487,7 +445,9 @@ JSON *_PARSER_PARSER(char*path){
             case 5://배열
                 if(key==NULL) return NULL;
                 printf("- ARRAYTAG:[%s:ARRAY]\n",key);
-                res = _PARSER_ARR(file,components,key);
+                res = _PARSER_ARR(file,key);
+                components->linked=res;
+                components->TYPE_LINK=res->TYPE_VALUE;
                 components=res;
                 key=NULL;
                 break;
@@ -495,7 +455,7 @@ JSON *_PARSER_PARSER(char*path){
                 if(key==NULL) return NULL;
                 printf("- OBJTAG:[%s:OBJECT]\n",key);
                 res = _PARSER_OBJ(file,components,key);
-                components=res;
+                //components=res;
                 key=NULL;
                 break;
             default:
@@ -508,5 +468,141 @@ JSON *_PARSER_PARSER(char*path){
         }
     
     }
+    //컴포넌트의 첫번째 값은 null이므로 두번째 값을 앞당김
+    json->value=components_CONST->linked;
+    //JSON_COMPONENTS*temp = components->linked;
+    //components=temp;
+    //json->value=components;
+    //free(temp);
     return json;
+}
+
+int PARSER_PRINT_ARR(JSON_COMPONENTS*array,int level){
+    JSON_ELEMENT*v=array->value;
+    while(1){
+        if(v==NULL){
+            for(int i=level;i>0;i--){
+            printf("    ");
+            }
+            printf("\033[0;33m]\033[0m\n");
+            return 0;
+        }
+        for(int i=level+1;i>0;i--){
+            printf("    ");
+        }
+        JSON_COMPONENTS*value = v->value;
+        switch (value->TYPE_VALUE)
+        {
+            case 1:
+                printf("\x1b[1;32m[INT]\033[0m%d\n",*(int*)value->value);
+                break;
+            case 2:
+                printf("\x1b[1;32m[FLOAT]\033[0m%f\n",*(float*)value->value);
+                break;
+            case 3:
+                printf("\x1b[1;32m[BOOL]\033[0m%d\n",*(bool*)value->value);
+                break;
+            case 4:
+                printf("\x1b[1;32m[STRING]\033[0m%s\n",(char*)value->value);
+                break;
+            case 5://배열
+                printf("\033[0;33m[ARRAY][\033[0m\n");
+                PARSER_PRINT_ARR(value,level+1);
+                break;
+            case 6://객체
+                printf("\033[38;2;255;128;0m[OBJECT]\033[38;2;255;128;0m{\033[0m\n");
+                PARSER_PRINT_OBJ(value,level+1);
+                break;
+            default:
+                printf("NULL\n");
+                break;
+        }
+        v=v->linked;
+    }
+    return 0;
+}
+
+int PARSER_PRINT_OBJ(JSON_COMPONENTS*obj,int level){
+    JSON_ELEMENT*v=obj->value;
+    while(1){
+        if(v==NULL){
+            for(int i=level;i>0;i--){
+            printf("    ");
+            }
+            printf("\033[38;2;255;128;0m}\033[0m\n");
+            return 0;
+        }
+        for(int i=level+1;i>0;i--){
+            printf("    ");
+        }
+        JSON_COMPONENTS*value = v->value;
+        switch (value->TYPE_VALUE)
+        {
+            case 1:
+                printf("%s:\x1b[1;32m[INT]\033[0m%d\n",value->tag,*(int*)value->value);
+                break;
+            case 2:
+                printf("%s:\x1b[1;32m[FLOAT]\033[0m%f\n",value->tag,*(float*)value->value);
+                break;
+            case 3:
+                printf("%s:\x1b[1;32m[BOOL]\033[0m%d\n",value->tag,*(bool*)value->value);
+                break;
+            case 4:
+                printf("%s:\x1b[1;32m[STRING]\033[0m%s\n",value->tag,value->value);
+                break;
+            case 5://배열
+                printf("%s:\033[0;33m[ARRAY][\033[0m\n",value->tag);
+                PARSER_PRINT_ARR(value,level+1);
+                break;
+            case 6://객체
+                printf("%s:\033[38;2;255;128;0m[OBJECT]\033[38;2;255;128;0m{\033[0m\n",value->tag);
+                PARSER_PRINT_OBJ(value,level+1);
+                break;
+            default:
+                printf("NULL\n");
+                break;
+        }
+        v=v->linked;
+    }
+    return 0;
+}
+
+int PARSER_PRINT(JSON*json){
+    JSON_COMPONENTS*v=(*json).value;
+    printf("\033[95m[JSON]\033[0m:\033[95m{\033[0m\n");
+    while(1){
+        if(v==NULL){
+            printf("\033[95m}\033[0m\n");
+            return 0;
+        }
+        printf("    ");
+        switch (v->TYPE_VALUE)
+        {
+            case 1:
+                printf("%s:\x1b[1;32m[INT]\x1b[0m%d\n",v->tag,*(int*)v->value);
+                break;
+            case 2:
+                printf("%s:\x1b[1;32m[FLOAT]\033[0m%f\n",v->tag,*(float*)v->value);
+                break;
+            case 3:
+                printf("%s:\x1b[1;32m[BOOL]\033[0m%d\n",v->tag,*(bool*)v->value);
+                break;
+            case 4:
+                printf("%s:\x1b[1;32m[STRING]\x1b[0m%s\n",v->tag,v->value);
+                break;
+            case 5://배열
+                printf("%s:\033[0;33m[ARRAY][\033[0m\n",v->tag);
+                PARSER_PRINT_ARR(v,1);
+                break;
+            case 6://객체
+                printf("%s:\033[38;2;255;128;0m[OBJECT]{\033[0m\n",v->tag);
+                PARSER_PRINT_OBJ(v,1);
+                break;
+            default:
+                printf("NULL\n");
+                break;
+        }
+        v=v->linked;
+    }
+    return 0;
 }

@@ -2,25 +2,26 @@
 //#define JSON.H
 #include <stdbool.h>
 
-typedef struct{
-    void*value;
-    unsigned char type;
-} JSON;
 
 //type1~4 | 1:int 2:float 3:bool 4:string 5:array 6:object  / 7:element
-typedef struct{
+typedef struct JSC{
     char* tag; //string or null
     unsigned char TYPE_VALUE;
     void* value; //기본 타입중 하나 | array나 object일 경우 JSON_ELEMENT
-    void*linked; //JSON_COMPONENTS 또는 JSON_OBJECT
+    struct JSC *linked; //JSON_COMPONENTS
     unsigned char TYPE_LINK; //0:NULL
 } JSON_COMPONENTS;
+
+typedef struct{
+    JSON_COMPONENTS*value;
+    unsigned char type;
+} JSON;
 
 //type5~6 | 5:array 6:object
 typedef struct JSEL{
     //char* tag; //string or null
     unsigned char TYPE_VALUE;
-    void* value; //기본 타입중 하나
+    JSON_COMPONENTS* value;
     struct JSEL*linked;
 } JSON_ELEMENT;
 

@@ -98,7 +98,8 @@ JSON* testjson();
             "item": "book",
             "lore": [
                 "0",
-                "1"
+                "1",
+                "2"
             ]
         }
     ]
@@ -106,21 +107,25 @@ JSON* testjson();
 */
 JSON* testjson(){
     JSON *dataset = malloc(sizeof(JSON));
-    JSON_COMPONENTS *lore1 = new_JSON_STRING("","1",NULL);//{"", "1", NULL};
-    JSON_COMPONENTS *lore0 = new_JSON_STRING("","0",lore1);//{"", "0", &lore1};
-    JSON_ELEMENT *lore_el1 = new_JSON_ELEMENT(lore1,NULL);//{&lore1, NULL};
-    JSON_ELEMENT *lore_el0 = new_JSON_ELEMENT(lore1,lore_el1);//{&lore0, &lore_el1};
-    JSON_COMPONENTS *lore = new_JSON_ARRAY(NULL,lore_el0,NULL);//{&lore_el0,NULL};
-    JSON_COMPONENTS *item = new_JSON_STRING("item","sss",lore);//{"item", "sss", &lore};
+    JSON_COMPONENTS *lore2 = new_JSON_STRING(NULL,"2",NULL);//{"", "1", NULL};
+    JSON_COMPONENTS *lore1 = new_JSON_STRING(NULL,"1",lore2);//{"", "1", NULL};
+    JSON_COMPONENTS *lore0 = new_JSON_STRING(NULL,"0",lore1);//{"", "0", &lore1};
+    JSON_ELEMENT *lore_el2 = new_JSON_ELEMENT(lore2,NULL);
+    JSON_ELEMENT *lore_el1 = new_JSON_ELEMENT(lore1,lore_el2);//{&lore1, NULL};
+    JSON_ELEMENT *lore_el0 = new_JSON_ELEMENT(lore0,lore_el1);//{&lore0, &lore_el1};
+    JSON_COMPONENTS *lore = new_JSON_ARRAY("lore",lore_el0,NULL);//{&lore_el0,NULL};
+
+    JSON_COMPONENTS *item = new_JSON_STRING("item","book",lore);//{"item", "sss", &lore};
+
     JSON_ELEMENT *itemo_el1 = new_JSON_ELEMENT(lore,NULL);//{&lore,NULL};
     JSON_ELEMENT *itemo_el0 = new_JSON_ELEMENT(item,itemo_el1);//{&item,&itemo_el1};
-    JSON_COMPONENTS *itemo = new_JSON_OBJECT(NULL,itemo_el0,NULL);//{&itemo_el0,NULL};
-    JSON_ELEMENT *itema = new_JSON_ELEMENT(itemo,NULL);//{&itemo,NULL};
-    JSON_COMPONENTS *items = new_JSON_ARRAY("lore",itema,NULL);//{&itema,NULL};
-    JSON_COMPONENTS *moneyid = new_JSON_STRING("moneyid","won",items);//{"moneyid", "won", &items};
+    JSON_COMPONENTS *itemo = new_JSON_OBJECT("items",itemo_el0,NULL);//{&itemo_el0,NULL};
+
+    JSON_COMPONENTS *moneyid = new_JSON_STRING("moneyid","won",itemo);//{"moneyid", "won", &items};
     JSON_COMPONENTS *name = new_JSON_STRING("name","상점",moneyid);//{"name", "상점", &moneyid};
-    JSON_COMPONENTS *shopid = new_JSON_STRING("shopid","shop1",name);//{"shopid", "shop1", &name};
-    dataset->value = &shopid;
+    JSON_COMPONENTS *v = new_JSON_STRING("shopid","shop1",name);//{"shopid", "shop1", &name};
+    
+    dataset->value = v;
     //
     //item->linked;//array
     return dataset;

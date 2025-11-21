@@ -6,7 +6,9 @@
 int main(){
     JSON*data= testjson();
     //printf("testcode");
-    _PARSER_PARSER("resources/1.json");
+    JSON*filedata= PARSER_PARSE("resources/1.json");
+    printf("\n\n\n");
+    PARSER_PRINT(filedata);
     //printf("%d",_PARSER_GETSPACE(data));
     //PARSER_SERIALIZE("resources/test.json");
     return 0;
