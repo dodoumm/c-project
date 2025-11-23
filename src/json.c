@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
 #include "json.h"
@@ -126,6 +127,7 @@ JSON* testjson(){
     JSON_COMPONENTS *v = new_JSON_STRING("shopid","shop1",name);//{"shopid", "shop1", &name};
     
     dataset->value = v;
+    dataset->type=v->TYPE_VALUE;
     //
     //item->linked;//array
     return dataset;

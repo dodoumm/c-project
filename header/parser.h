@@ -9,18 +9,20 @@ typedef struct
     int thischar;
 } PARSER_SINGLEDATA;
 
-char *_PARSER_STR(FILE*file);
+int _PARSER_NEXTCHAR(FILE*file);
+
+PARSER_SINGLEDATA _PARSER_STR(FILE*file);
 
 PARSER_SINGLEDATA _PARSER_EXTRACTION(FILE*file);
 
-JSON_COMPONENTS *_PARSER_OBJ(FILE*file,JSON_COMPONENTS*before,char *tagkey);
+JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch);
 
-JSON_COMPONENTS *_PARSER_ARR(FILE*file,char *tagkey);
+JSON_COMPONENTS *_PARSER_ARR(FILE*file,char *tagkey,int lastch);
 
 JSON *PARSER_PARSE(char*path);
 
-int PARSER_PRINT_ARR(JSON_COMPONENTS*array,int level);
+int _PARSER_PRINT_ARR(JSON_COMPONENTS*array,int level);
 
-int PARSER_PRINT_OBJ(JSON_COMPONENTS*obj,int level);
+int _PARSER_PRINT_OBJ(JSON_COMPONENTS*obj,int level);
 
 int PARSER_PRINT(JSON *json);
