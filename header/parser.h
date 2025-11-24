@@ -1,6 +1,3 @@
-//#include "json.h"
-
-//JSON *PARSER_SERIALIZE(char* path);
 typedef struct
 {
     //1:int 2:float 3:bool 4:string 5:array 6:object | 7:element | 10:array_close 11:object_close

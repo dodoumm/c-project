@@ -28,7 +28,6 @@ PARSER_SINGLEDATA _PARSER_STR(FILE*file){
             //문자열의 끝
             STR[STR_INDEX]='\0';
             //뒤에 위치한 공백을 다 지우고 다음 :나 , 까지 이동
-            //ch=fgetc(file);//문자열 끝의 다음 문자
             ch=_PARSER_NEXTCHAR(file);
             return (PARSER_SINGLEDATA){4,STR,ch};
         }else{
@@ -117,14 +116,11 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch){
     JSON_COMPONENTS *components=new_JSON_OBJECT(tagkey,NULL,NULL);
     PARSER_SINGLEDATA v;//하나의 값을 가져오는 원소
 
-    //int ch=fgetc(file);//{ 바로 앞 문자
     char*key=NULL;
 
     int ch=_PARSER_NEXTCHAR(file);
-    //printf("OBJ: %c\n",ch);
 
     while(1){
-        //printf("NOW: %c\n",ch);
         if(ch=='\"'){
             if(key==NULL){
                 //이 문자열은 tag(key)
@@ -132,7 +128,6 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch){
                 if(v.TYPE_VALUE==0) return NULL;
                 key = v.value;
                 ch=v.thischar;
-                //printf("NEXT: %c\n",ch);
             }else{
                 //이 문자열은 value-> JSON_STRING
                 v = _PARSER_STR(file);
@@ -143,7 +138,6 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch){
                 components->linked=res;
                 components->TYPE_LINK=4;
                 components = res;
-                printf("- STRINGTAG:[%s:%s]\n",key,res->value);
                 key=NULL;
             }
         continue;
@@ -151,7 +145,6 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch){
             if(key==NULL) return NULL;
             v = _PARSER_EXTRACTION(file);
             ch=v.thischar;
-            //printf("NEXT: %c\n",ch);
             JSON_COMPONENTS*res;
             JSON_ELEMENT *tempel;
             switch (v.TYPE_VALUE)
@@ -163,7 +156,6 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch){
                 tempel=new_JSON_ELEMENT(res,NULL);
                 element->linked=tempel;
                 element=tempel;
-                printf("- %s->%d\n",key,*(int*)(res->value));
                 key=NULL;
                 break;
             case 2:
@@ -173,7 +165,6 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch){
                 tempel=new_JSON_ELEMENT(res,NULL);
                 element->linked=tempel;
                 element=tempel;
-                printf("- %s->%f\n",key,*(float*)(res->value));
                 key=NULL;
                 break;
             case 3:
@@ -183,7 +174,6 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch){
                 tempel=new_JSON_ELEMENT(res,NULL);
                 element->linked=tempel;
                 element=tempel;
-                printf("- %s->%d\n",key,*(bool*)(res->value));
                 key=NULL;
                 break;
             case 4:
@@ -192,11 +182,9 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch){
                 tempel=new_JSON_ELEMENT(res,NULL);
                 element->linked=tempel;
                 element=tempel;
-                printf("- %s->%s\n",key,res->value);
                 key=NULL;
                 break;
             case 5://배열
-                printf("- %s->ARRAY\n",key);
                 res = _PARSER_ARR(file,key,ch);
                 tempel=new_JSON_ELEMENT(res,NULL);
                 element->linked=tempel;
@@ -211,7 +199,6 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch){
                 if(ch!=','&&ch!='}'&&ch!=']') return NULL;//다음 문자가 쉼표가 아님->json형식 오류
                 break;
             case 6://객체
-                printf("- %s->OBJECT\n",key);
                 res = _PARSER_OBJ(file,key,ch);
                 tempel=new_JSON_ELEMENT(res,NULL);
                 element->linked=tempel;
@@ -226,10 +213,8 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch){
                 if(ch!=','&&ch!='}'&&ch!=']') return NULL;//다음 문자가 쉼표가 아님->json형식 오류
                 break;
             default:
-                printf("NULLED\n");
                 return NULL;//유효하지 않은 typeid
             }
-            //key=NULL;
         }
         if(ch==','){
             //다음 key값을 받을 차례
@@ -238,7 +223,6 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch){
                 int nextchar = _PARSER_NEXTCHAR(file);
                 ch=nextchar;
             }
-            //printf("NEXT : %c\n",ch);
             if(ch!='\"') return NULL;//다음 키값이 string이 아님->json형식 오류
             continue;
         }
@@ -246,14 +230,11 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch){
             //컴포넌트의 첫번째 값은 null이므로 두번째 값을 앞당김
             element=element_CONST->linked;
             components->value=element;
-            //components->TYPE_LINK=7;
             free(element_CONST);//null값을 담고있던 초기화용 데이터해체
-            printf("RETURN OBJV : %s\n",tagkey);
             return components;
         }
     
     }
-    printf("RETURN NULL");
     return NULL;
 }
 
@@ -262,18 +243,14 @@ JSON_COMPONENTS *_PARSER_ARR(FILE*file,char *tagkey,int lastch){
     JSON_ELEMENT*element = malloc(sizeof(JSON_ELEMENT));
     JSON_ELEMENT*element_CONST = element;//가장 처음 원소값
     JSON_COMPONENTS *components=new_JSON_ARRAY(tagkey,NULL,NULL);
-    //JSON_COMPONENTS*components_CONST = components;//원본 components(절대 변경되어선 안됌)
     PARSER_SINGLEDATA v;//하나의 값을 가져오는 원소
 
-    //int ch=fgetc(file);//{ 바로 앞 문자 ->"이라면 되돌리기x
     int ch=_PARSER_NEXTCHAR(file);
     if(ch!='\"'||ch!='{'||ch!='[') ungetc(ch,file);//닫는 문자가 있는 자료형일때에는 되돌리지 않음
-    printf("ARR: %c\n",ch);
 
     while(1){
         v = _PARSER_EXTRACTION(file);
         ch=v.thischar;
-        //printf("CHAR: %c\n",ch);
         JSON_COMPONENTS*res;
         JSON_ELEMENT *tempel;
         switch (v.TYPE_VALUE)
@@ -284,29 +261,23 @@ JSON_COMPONENTS *_PARSER_ARR(FILE*file,char *tagkey,int lastch){
             tempel=new_JSON_ELEMENT(res,NULL);
             element->linked=tempel;
             element=tempel;
-            printf("-- %d\n",*(int*)(res->value));
             free(v.value);//v.value는 res에서 복사되었고 더이상 쓸모가 없으므로 해체
-            //printf("- INTTAG:[%s:%d]\n",key,*(int*)(v.value));
             break;
         case 2:
             res = new_JSON_FLOAT(NULL,*(float*)v.value,NULL);
-            printf("-- %f\n",*(float*)(res->value));
             free(v.value);//v.value는 res에서 복사되었고 더이상 쓸모가 없으므로 해체
             //
             tempel=new_JSON_ELEMENT(res,NULL);
             element->linked=tempel;
             element=tempel;
-            //printf("- FLOATTAG:{%s:%f}\n",key,*(float*)v.value);
             break;
         case 3:
             res = new_JSON_BOOL(NULL,*(bool*)v.value,NULL);
-            printf("-- %d\n",*(bool*)(res->value));
             free(v.value);//v.value는 res에서 복사되었고 더이상 쓸모가 없으므로 해체
             //
             tempel=new_JSON_ELEMENT(res,NULL);
             element->linked=tempel;
             element=tempel;
-            //printf("- BOOLTAG:{%s:%d}\n",key,*(bool*)res->value);
             break;
         case 4:
             res = new_JSON_STRING(NULL,v.value,NULL);//string값은 참조로 전달되기 때문에 해체x
@@ -314,38 +285,30 @@ JSON_COMPONENTS *_PARSER_ARR(FILE*file,char *tagkey,int lastch){
             tempel=new_JSON_ELEMENT(res,NULL);
             element->linked=tempel;
             element=tempel;
-            printf("-- %s\n",v.value);
-            //printf("- STRINGTAG:{%s:%s}\n",key,res->value);
             break;
         case 5://배열
-            //printf("- ARRAYTAG:[%s:ARRAY]\n",key);
             res = _PARSER_ARR(file,NULL,ch);
             tempel=new_JSON_ELEMENT(res,NULL);
             element->linked=tempel;
             element=tempel;
-            //printf("-- ARRAY\n");
             //res는 file의 해당 배열의]까지 읽음-> 쉼표 읽고 다음 반복에서 다음 유효문자가 읽히도록 함
             ch=fgetc(file);//, 바로 앞 문자
             if(ch==' '||ch=='\n'){
                 int nextchar = _PARSER_NEXTCHAR(file);
                 ch=nextchar;
             }
-            //if(ch!=',') return NULL;//object가 아니므로 키 없이 바로 값이 옴
             break;
         case 6://객체
-            //printf("- OBJECTTAG:[%s:OBJECT]\n",key);
             res = _PARSER_OBJ(file,NULL,ch);
             tempel=new_JSON_ELEMENT(res,NULL);
             element->linked=tempel;
             element=tempel;
-            printf("-- OBJECT\n");
             //res는 file의 해당 배열의]까지 읽음-> 쉼표 읽고 다음 반복에서 다음 유효문자가 읽히도록 함
             ch=fgetc(file);//, 바로 앞 문자
             if(ch==' '||ch=='\n'){
                 int nextchar = _PARSER_NEXTCHAR(file);
                 ch=nextchar;
             }
-            //if(ch!=',') return NULL;//object가 아니므로 키 없이 바로 값이 옴
             break;
         default:
             return NULL;//유효하지 않은 typeid
@@ -356,11 +319,9 @@ JSON_COMPONENTS *_PARSER_ARR(FILE*file,char *tagkey,int lastch){
             components->value=element;
             free(element_CONST);//null값을 담고있던 초기화용 데이터해체
             return components;
-            printf("RETURN ARRV : %s\n",tagkey);
         }
     
     }
-    printf("RETURN NULL");
     return NULL;
 }
 
@@ -375,21 +336,16 @@ JSON *PARSER_PARSE(char*path){
     while((ch=fgetc(file))!=EOF){
         if(ch=='{'){
             //object로 시작
-            printf("STARTOBJ: %c\n",ch);
             json->value = _PARSER_OBJ(file,NULL,ch);
             json->type = json->value->TYPE_VALUE;
-        printf("FINISHED\n");
             return json;
         }else if(ch=='['){
             //array로 시작
-            printf("STARTARR: %c\n",ch);
             json->value = _PARSER_ARR(file,NULL,ch);
             json->type = json->value->TYPE_VALUE;
-        printf("FINISHED\n");
             return json;
         }
     }
-    printf("FINISHED\n");
     return NULL;//끝낼 때까지 오브젝트 또는 배열의 시작이 안나옴
 }
 
@@ -487,16 +443,12 @@ int PARSER_PRINT(JSON*json){
     JSON_COMPONENTS*v=(*json).value;//JSON_ELEMENT
     const const unsigned char JSONTYPE = v->TYPE_VALUE;
     if(JSONTYPE==5){//JSON_ARRAY
-        //printf("\033[95m[JSON ARRAY]\033[0m:\033[95m[\033[0m\n");
         printf("\033[0;33m[ARRAY][\033[0m\n");
         _PARSER_PRINT_ARR(v,0);
-        //printf("\033[38;2;255;128;0m]\033[0m\n");
-    }else{
+    }else{//JSON_OBJECT
         //head출력
         printf("\033[38;2;255;128;0m[OBJECT]{\033[0m\n");
         _PARSER_PRINT_OBJ(v,0);
-        //printf("\033[38;2;255;128;0m}\033[0m\n");
-        //printf("\033[95m[JSON OBJECT]\033[0m:\033[95m[\033[0m\n");
     }
     return 0;
 }
