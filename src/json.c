@@ -121,14 +121,19 @@ JSON* testjson(){
     JSON_ELEMENT *itemo_el1 = new_JSON_ELEMENT(lore,NULL);//{&lore,NULL};
     JSON_ELEMENT *itemo_el0 = new_JSON_ELEMENT(item,itemo_el1);//{&item,&itemo_el1};
     JSON_COMPONENTS *itemo = new_JSON_OBJECT("items",itemo_el0,NULL);//{&itemo_el0,NULL};
+    JSON_ELEMENT*el1 = new_JSON_ELEMENT(itemo,NULL);
 
     JSON_COMPONENTS *moneyid = new_JSON_STRING("moneyid","won",itemo);//{"moneyid", "won", &items};
+    JSON_ELEMENT*el2 = new_JSON_ELEMENT(moneyid,el1);
+
     JSON_COMPONENTS *name = new_JSON_STRING("name","상점",moneyid);//{"name", "상점", &moneyid};
+    JSON_ELEMENT*el3 = new_JSON_ELEMENT(name,el2);
+
     JSON_COMPONENTS *v = new_JSON_STRING("shopid","shop1",name);//{"shopid", "shop1", &name};
+    JSON_ELEMENT*el4 = new_JSON_ELEMENT(v,el3);
+    JSON_COMPONENTS *result = new_JSON_OBJECT(NULL,el4,NULL);
+    dataset->value = result;
+    dataset->type=result->TYPE_VALUE;
     
-    dataset->value = v;
-    dataset->type=v->TYPE_VALUE;
-    //
-    //item->linked;//array
     return dataset;
 }

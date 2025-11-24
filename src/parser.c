@@ -208,7 +208,7 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch){
                     int nextchar = _PARSER_NEXTCHAR(file);
                     ch=nextchar;
                 }
-                if(ch!=',') return NULL;//다음 문자가 쉼표가 아님->json형식 오류
+                if(ch!=','&&ch!='}'&&ch!=']') return NULL;//다음 문자가 쉼표가 아님->json형식 오류
                 break;
             case 6://객체
                 printf("- %s->OBJECT\n",key);
@@ -223,7 +223,7 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch){
                     int nextchar = _PARSER_NEXTCHAR(file);
                     ch=nextchar;
                 }
-                if(ch!=',') return NULL;//다음 문자가 쉼표가 아님->json형식 오류
+                if(ch!=','&&ch!='}'&&ch!=']') return NULL;//다음 문자가 쉼표가 아님->json형식 오류
                 break;
             default:
                 printf("NULLED\n");
@@ -246,8 +246,9 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch){
             //컴포넌트의 첫번째 값은 null이므로 두번째 값을 앞당김
             element=element_CONST->linked;
             components->value=element;
+            //components->TYPE_LINK=7;
             free(element_CONST);//null값을 담고있던 초기화용 데이터해체
-            printf("RETURN V");
+            printf("RETURN OBJV : %s\n",tagkey);
             return components;
         }
     
@@ -355,7 +356,7 @@ JSON_COMPONENTS *_PARSER_ARR(FILE*file,char *tagkey,int lastch){
             components->value=element;
             free(element_CONST);//null값을 담고있던 초기화용 데이터해체
             return components;
-            //printf("RETURN V");
+            printf("RETURN ARRV : %s\n",tagkey);
         }
     
     }
@@ -489,10 +490,12 @@ int PARSER_PRINT(JSON*json){
         //printf("\033[95m[JSON ARRAY]\033[0m:\033[95m[\033[0m\n");
         printf("\033[0;33m[ARRAY][\033[0m\n");
         _PARSER_PRINT_ARR(v,0);
+        //printf("\033[38;2;255;128;0m]\033[0m\n");
     }else{
         //head출력
         printf("\033[38;2;255;128;0m[OBJECT]{\033[0m\n");
         _PARSER_PRINT_OBJ(v,0);
+        //printf("\033[38;2;255;128;0m}\033[0m\n");
         //printf("\033[95m[JSON OBJECT]\033[0m:\033[95m[\033[0m\n");
     }
     return 0;
