@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "json.h"
+#include <math.h>
 
 
 JSON_COMPONENTS *new_JSON_INT(char*tag,int value,JSON_COMPONENTS*linked){
@@ -78,9 +79,48 @@ JSON_ELEMENT *new_JSON_ELEMENT(JSON_COMPONENTS*value,JSON_ELEMENT*linked){
     data->value=value;
     return data;
 };
+//find function -> 매개변수 json은 반드시 array 또는 object여야함, 아니라면 무조건 Null반환
+JSON_COMPONENTS *JSON_FIND_INT(int value,JSON_COMPONENTS *json,bool search_unlimited){
+    if(json->TYPE_VALUE==5){//arr
+        JSON_ELEMENT *el = json->value;
+        while(1){
+            if(el==NULL) return NULL;
+            if(((JSON_COMPONENTS*)(el->value))->TYPE_VALUE==1 && *(int*)(((JSON_COMPONENTS*)el->value)->value)==value) return (JSON_COMPONENTS*)el->value;
+            el=el->linked;
+        }
+    }else if(json->TYPE_VALUE==6){//object
+        JSON_ELEMENT *el = json->value;
+        while(1){
+            if(el==NULL) return NULL;
+            if(((JSON_COMPONENTS*)(el->value))->TYPE_VALUE==1 && *(int*)(((JSON_COMPONENTS*)el->value)->value)==value) return (JSON_COMPONENTS*)el->value;
+            el=el->linked;
+        }
+    }else return NULL;
+    return NULL;
+};
 
-
-JSON* testjson();
+JSON_COMPONENTS *JSON_FIND_FLOAT(float value,JSON_COMPONENTS *json,bool search_unlimited){
+    if(json->TYPE_VALUE==5){//arr
+        JSON_ELEMENT *el = json->value;
+        while(1){
+            while(1){
+            if(el==NULL) return NULL;
+                if(((JSON_COMPONENTS*)(el->value))->TYPE_VALUE==2 && *(float*)(((JSON_COMPONENTS*)el->value)->value)==(float)value) return (JSON_COMPONENTS*)el->value;
+                el=el->linked;
+            }
+        }
+    }else if(json->TYPE_VALUE==6){//object
+        JSON_ELEMENT *el = json->value;
+        while(1){
+            while(1){
+            if(el==NULL) return NULL;
+                if(((JSON_COMPONENTS*)(el->value))->TYPE_VALUE==2 && *(float*)(((JSON_COMPONENTS*)el->value)->value)==(float)value) return (JSON_COMPONENTS*)el->value;
+                el=el->linked;
+            }
+        }
+    }else return NULL;
+    return NULL;
+};
 
 /*
 {

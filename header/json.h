@@ -38,6 +38,14 @@ JSON_COMPONENTS *new_JSON_OBJECT(char*tag,JSON_ELEMENT *value,JSON_COMPONENTS*li
 
 JSON_ELEMENT *new_JSON_ELEMENT(JSON_COMPONENTS*value,JSON_ELEMENT*linked);
 
+//findfunction
+JSON_COMPONENTS *JSON_FIND_INT(int value,JSON_COMPONENTS *json,bool search_unlimited);
+
+JSON_COMPONENTS *JSON_FIND_FLOAT(float value,JSON_COMPONENTS *json,bool search_unlimited);
+
+JSON_COMPONENTS *JSON_FIND_BOOL(bool value,JSON_COMPONENTS *json,bool search_unlimited);
+
+JSON_COMPONENTS *JSON_FIND_STRING(char* value,JSON_COMPONENTS *json,bool search_unlimited);
 
 JSON* testjson();
 

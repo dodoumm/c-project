@@ -17,6 +17,7 @@ int _PARSER_NEXTCHAR(FILE*file){
 }
 
 
+
 //앞에 "가 나왔을때 => 반환된 문자 뒤에 위치한 공백을 지우고 :나 , 까지 감 | TYPE_VALUE=0 반환:문자열이 유효하지 않음
 PARSER_SINGLEDATA _PARSER_STR(FILE*file){
     int ch;
@@ -43,7 +44,7 @@ PARSER_SINGLEDATA _PARSER_STR(FILE*file){
 //앞에 :가 나왔을때 => 반환된 문자 뒤에 위치한 공백을 지우고 :나 , 까지 감 | TYPE_VALUE=0 반환:문자열이 유효하지 않음
 PARSER_SINGLEDATA _PARSER_EXTRACTION(FILE*file){
     int ch;
-    int INT_INDEX = 0;
+    int INT_INDEX = 0;//'\0'을 제외한 글자수
     char*INT=malloc(110);
     bool isfloat=false;
     while((ch=fgetc(file))!=EOF){
@@ -96,14 +97,31 @@ PARSER_SINGLEDATA _PARSER_EXTRACTION(FILE*file){
         }
     }
     if(INT_INDEX==0) return (PARSER_SINGLEDATA){0,0,ch};//유효한 문자가 없음
-    INT[INT_INDEX]='\0';
     if(!isfloat){//정수(int) 반환
+        INT[INT_INDEX]='\0';
         int *v = malloc(sizeof(int));
         *v=atoi(INT);
         return (PARSER_SINGLEDATA){1,v,ch};
-    }else{//실수(float) 반환
-        float *v = malloc(sizeof(float));
-        *v=atof(INT);
+    }else{//실수(float) 반환 (유효숫자 7개까지만 가능)
+        int i = INT_INDEX-1;//실제 index
+        if(INT[i]=='.'){//마지막 글자가 .임->json 오류
+            return (PARSER_SINGLEDATA){0,0,ch};
+        }
+        float *v = malloc(sizeof(double));
+        bool isdeleted = false;
+        for(;i>7;i--){//소수점 포함이므로 8자리(유효숫자:7)까지만 반영
+            if(INT[i]=='.') isdeleted=true;
+            INT[i]='\0';
+        }
+        //printf("fSTR : %s\n",INT);
+        if(isdeleted||INT[i]=='.'){//소수점이 사라졌거나 마지막 글자가 .임
+            INT[--i]='.';
+            INT[++i] = '0';
+            INT[++i] = '\0';
+        }else INT[++i] = '\0';
+        INT_INDEX = i;
+        printf("FLOAT : %s\n",INT);
+        *v=(float)atof(INT);
         return (PARSER_SINGLEDATA){2,v,ch};
     }
 }
@@ -338,14 +356,17 @@ JSON *PARSER_PARSE(char*path){
             //object로 시작
             json->value = _PARSER_OBJ(file,NULL,ch);
             json->type = json->value->TYPE_VALUE;
+            fclose(file);
             return json;
         }else if(ch=='['){
             //array로 시작
             json->value = _PARSER_ARR(file,NULL,ch);
             json->type = json->value->TYPE_VALUE;
+            fclose(file);
             return json;
         }
     }
+    fclose(file);
     return NULL;//끝낼 때까지 오브젝트 또는 배열의 시작이 안나옴
 }
 
@@ -369,7 +390,10 @@ int _PARSER_PRINT_ARR(JSON_COMPONENTS*array,int level){
                 printf("\x1b[1;32m[INT]\033[0m%d\n",*(int*)value->value);
                 break;
             case 2:
-                printf("\x1b[1;32m[FLOAT]\033[0m%f\n",*(float*)value->value);
+                float v = *(float*)value->value;
+                printf("\x1b[1;32m[FLOAT]\033[0m%.7g",v);
+                if(v==(int)v) printf(".0");
+                printf("\n");
                 break;
             case 3:
                 printf("\x1b[1;32m[BOOL]\033[0m%d\n",*(bool*)value->value);
@@ -414,7 +438,10 @@ int _PARSER_PRINT_OBJ(JSON_COMPONENTS*obj,int level){
                 printf("%s:\x1b[1;32m[INT]\033[0m%d\n",value->tag,*(int*)value->value);
                 break;
             case 2:
-                printf("%s:\x1b[1;32m[FLOAT]\033[0m%f\n",value->tag,*(float*)value->value);
+                float v = *(float*)value->value;
+                printf("\x1b[1;32m[FLOAT]\033[0m%.7g",v);
+                if(v==(int)v) printf(".0");
+                printf("\n");
                 break;
             case 3:
                 printf("%s:\x1b[1;32m[BOOL]\033[0m%d\n",value->tag,*(bool*)value->value);
