@@ -6,20 +6,31 @@
 #include "parser.h"
 
 int main(){
-    JSON*data= testjson();
-    JSON*filedata= PARSER_PARSE("resources/2.json");
+    JSON_COMPONENTS*data= testjson();
+    JSON_COMPONENTS*filedata= PARSER_PARSE("resources/1.json");
+    printf("PARSED\n");
     if(filedata==NULL){
         printf("ERROR:json파일을 읽는데 문제가 발생하였습니다.\n");
     }
     PARSER_PRINT(filedata);
     //PARSER_PRINT(data);
+    
     printf("ㅡㅡㅡFINDㅡㅡㅡ\n");
-    float t = 21474.5539868;
-    printf("float : %.12g\n",t);
-    printf("floatS : %.10g\n",atof("2147483647.0"));
-    JSON_COMPONENTS *findt = JSON_FIND_FLOAT(29.45,filedata->value,false);
+    //printf("JSON_LENGTH : %d",JSON_LENGTH(filedata->value));
+    JSON_COMPONENTS *findt = JSON_FIND_INDEX(filedata->value,3);//JSON_FIND_FLOAT(67.0,filedata->value,false);
     if(findt==NULL){
         printf("CANT FIND\n");
-    }else printf("FIND : %s : %.6g\n",findt->tag,*(float*)findt->value);
+    }else PARSER_PRINT_VALUE(findt);
+    JSON_COMPONENTS sort = JSON_FILTER_TYPE(*filedata,T_FLOAT);
+    if(sort.value==NULL){
+        printf("CANT FILTER\n");
+    }else{
+        PARSER_PRINT(&sort);
+    }
+    printf("ㅡㅡㅡFREEㅡㅡㅡ\n");
+    JSON_FREE(data);
+    JSON_FREE(filedata);
+    JSON_FREE(&sort);
+    PARSER_PRINT(filedata);
     return 0;
 }

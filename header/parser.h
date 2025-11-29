@@ -16,10 +16,12 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch);
 
 JSON_COMPONENTS *_PARSER_ARR(FILE*file,char *tagkey,int lastch);
 
-JSON *PARSER_PARSE(char*path);
+JSON_COMPONENTS *PARSER_PARSE(char*path);
+
+int PARSER_PRINT_VALUE(JSON_COMPONENTS *value);
 
 int _PARSER_PRINT_ARR(JSON_COMPONENTS*array,int level);
 
 int _PARSER_PRINT_OBJ(JSON_COMPONENTS*obj,int level);
 
-int PARSER_PRINT(JSON *json);
+int PARSER_PRINT(JSON_COMPONENTS *json);

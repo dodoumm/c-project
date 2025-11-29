@@ -2,24 +2,30 @@
 //#define JSON.H
 #include <stdbool.h>
 
+typedef enum{
+    T_NONE,
+    T_INT,
+    T_FLOAT,
+    T_BOOL,
+    T_STRING,
+    T_ARRAY,
+    T_OBJECT
+} VTYPE;//valuetype
+
 
 //TYPE_ID = 1:int 2:float 3:bool 4:string 5:array 6:object
 typedef struct JSC{
     char* tag; //json의 키값(없을수도 있음)
-    unsigned char TYPE_VALUE;//value의 타입
+    VTYPE TYPE_VALUE;//value의 타입
     void* value; //기본 타입중 하나 | array나 object일 경우 JSON_ELEMENT
     struct JSC *linked; //JSON_COMPONENTS
-    unsigned char TYPE_LINK; //0:NULL
+    //unsigned char TYPE_LINK; //0:NULL
 } JSON_COMPONENTS;
 
-typedef struct{
-    JSON_COMPONENTS*value;
-    unsigned char type;
-} JSON;
 
 //type5~6 | 5:array 6:object
 typedef struct JSEL{
-    unsigned char TYPE_VALUE;
+    //unsigned char TYPE_VALUE;
     JSON_COMPONENTS* value;
     struct JSEL*linked;
 } JSON_ELEMENT;
@@ -38,6 +44,17 @@ JSON_COMPONENTS *new_JSON_OBJECT(char*tag,JSON_ELEMENT *value,JSON_COMPONENTS*li
 
 JSON_ELEMENT *new_JSON_ELEMENT(JSON_COMPONENTS*value,JSON_ELEMENT*linked);
 
+//func
+
+
+
+int JSON_LENGTH(JSON_COMPONENTS*value);
+
+JSON_COMPONENTS*JSON_FIND_KEY(JSON_COMPONENTS*value,char*key);
+JSON_COMPONENTS*JSON_FIND_INDEX(JSON_COMPONENTS*value,int index);
+
+JSON_COMPONENTS JSON_FILTER_TYPE(JSON_COMPONENTS obj,unsigned char type);
+
 //findfunction
 JSON_COMPONENTS *JSON_FIND_INT(int value,JSON_COMPONENTS *json,bool search_unlimited);
 
@@ -47,6 +64,9 @@ JSON_COMPONENTS *JSON_FIND_BOOL(bool value,JSON_COMPONENTS *json,bool search_unl
 
 JSON_COMPONENTS *JSON_FIND_STRING(char* value,JSON_COMPONENTS *json,bool search_unlimited);
 
-JSON* testjson();
+//free
+void JSON_FREE(JSON_COMPONENTS *value);
+
+JSON_COMPONENTS* testjson();
 
 //#endif

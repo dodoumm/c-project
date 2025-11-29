@@ -22,23 +22,44 @@ int _PARSER_NEXTCHAR(FILE*file){
 PARSER_SINGLEDATA _PARSER_STR(FILE*file){
     int ch;
     int STR_INDEX = 0;
-    char*STR=malloc(110);
+    //char*STR=malloc(110*sizeof(char));
     int slashes=0;
+    //
+    long pos = ftell(file);
+    bool ended = false;
+    int length = 0;
     while((ch=fgetc(file))!=EOF){
+        if(ch<0||ch>127) continue;//아스키 이외의 문자는 처리x
         if(slashes%2==0&&ch=='\"'){
-            //문자열의 끝
-            STR[STR_INDEX]='\0';
-            //뒤에 위치한 공백을 다 지우고 다음 :나 , 까지 이동
-            ch=_PARSER_NEXTCHAR(file);
-            return (PARSER_SINGLEDATA){4,STR,ch};
+            ended=true;
+            break;
         }else{
-            STR[STR_INDEX++] = (unsigned char)ch;
+            length++;
         }
         if(ch=='\\'){
             slashes+=1;
         }else slashes=0;
     }
-    return (PARSER_SINGLEDATA){0,NULL,ch};
+    //printf("LENGTH : %d\n",length);
+    fseek(file,pos,SEEK_SET);
+
+    if(ended==false) return (PARSER_SINGLEDATA){T_NONE,NULL,ch};
+    char*STR=malloc((length+1)*sizeof(char));
+    for(int i = 0;i!=length;i++){
+        ch = fgetc(file);
+        //printf("CH : %c\n",ch);
+        if(ch<0||ch>127){
+            i+=1;
+            continue;
+        };
+        //문자열 읽기
+        STR[i] = ch;
+    }
+    STR[length]=0;//문자열 종료
+    //printf("STRING : %s\n",STR);
+    ch=fgetc(file);//뒤에 "제거
+    ch=_PARSER_NEXTCHAR(file);
+    return (PARSER_SINGLEDATA){T_STRING,STR,ch};
 }
 
 //앞에 :가 나왔을때 => 반환된 문자 뒤에 위치한 공백을 지우고 :나 , 까지 감 | TYPE_VALUE=0 반환:문자열이 유효하지 않음
@@ -154,7 +175,7 @@ JSON_COMPONENTS *_PARSER_OBJ(FILE*file,char *tagkey,int lastch){
                 ch=v.thischar;
                 //
                 components->linked=res;
-                components->TYPE_LINK=4;
+                //components->TYPE_LINK=4;
                 components = res;
                 key=NULL;
             }
@@ -343,31 +364,96 @@ JSON_COMPONENTS *_PARSER_ARR(FILE*file,char *tagkey,int lastch){
     return NULL;
 }
 
-JSON *PARSER_PARSE(char*path){
+JSON_COMPONENTS *PARSER_PARSE(char*path){
     FILE* file = fopen(path,"r");
     if(file==NULL){
         printf("파일을 읽을 수 없음");
         return NULL;
     }
-    JSON*json = malloc(sizeof(JSON));
+    JSON_COMPONENTS *json;
     int ch;//받은 char(유니코드 기준으로 char가 아닌 int)
     while((ch=fgetc(file))!=EOF){
         if(ch=='{'){
             //object로 시작
-            json->value = _PARSER_OBJ(file,NULL,ch);
-            json->type = json->value->TYPE_VALUE;
+            json=_PARSER_OBJ(file,NULL,ch);
+            //json->value = _PARSER_OBJ(file,NULL,ch);
+            //json->type = json->value->TYPE_VALUE;
             fclose(file);
             return json;
         }else if(ch=='['){
             //array로 시작
-            json->value = _PARSER_ARR(file,NULL,ch);
-            json->type = json->value->TYPE_VALUE;
+            json=_PARSER_ARR(file,NULL,ch);
+            //json->value = _PARSER_ARR(file,NULL,ch);
+            //json->type = json->value->TYPE_VALUE;
             fclose(file);
             return json;
         }
     }
     fclose(file);
     return NULL;//끝낼 때까지 오브젝트 또는 배열의 시작이 안나옴
+}
+
+int PARSER_PRINT_VALUE(JSON_COMPONENTS *value){
+    if(value->tag!=NULL){
+    switch (value->TYPE_VALUE){
+        case 1:
+            printf("%s:\x1b[1;32m[INT]\033[0m%d\n",value->tag,*(int*)value->value);
+            break;
+        case 2:
+            float v = *(float*)value->value;
+            printf("%s:\x1b[1;32m[FLOAT]\033[0m%.7g",value->tag,v);
+            if(v==(int)v) printf(".0");
+            printf("\n");
+            break;
+        case 3:
+            printf("%s:\x1b[1;32m[BOOL]\033[0m%d\n",value->tag,*(bool*)value->value);
+            break;
+        case 4:
+            printf("%s:\x1b[1;32m[STRING]\033[0m%s\n",value->tag,value->value);
+            break;
+        case 5://배열
+            printf("%s:\033[0;33m[ARRAY][\033[0m\n",value->tag);
+            _PARSER_PRINT_ARR(value,0);
+            break;
+        case 6://객체
+            printf("%s:\033[38;2;255;128;0m[OBJECT]\033[38;2;255;128;0m{\033[0m\n",value->tag);
+            _PARSER_PRINT_OBJ(value,0);
+            break;
+        default:
+            printf("NULL\n");
+            break;
+    }
+    }else{
+        switch (value->TYPE_VALUE)
+        {
+            case 1:
+                printf("\x1b[1;32m[INT]\033[0m%d\n",*(int*)value->value);
+                break;
+            case 2:
+                float v = *(float*)value->value;
+                printf("\x1b[1;32m[FLOAT]\033[0m%.7g",v);
+                if(v==(int)v) printf(".0");
+                printf("\n");
+                break;
+            case 3:
+                printf("\x1b[1;32m[BOOL]\033[0m%d\n",*(bool*)value->value);
+                break;
+            case 4:
+                printf("\x1b[1;32m[STRING]\033[0m%s\n",(char*)value->value);
+                break;
+            case 5://배열
+                printf("\033[0;33m[ARRAY][\033[0m\n");
+                _PARSER_PRINT_ARR(value,0);
+                break;
+            case 6://객체
+                printf("\033[38;2;255;128;0m[OBJECT]\033[38;2;255;128;0m{\033[0m\n");
+                _PARSER_PRINT_OBJ(value,0);
+                break;
+            default:
+                printf("NULL\n");
+                break;
+        }
+    }
 }
 
 int _PARSER_PRINT_ARR(JSON_COMPONENTS*array,int level){
@@ -439,7 +525,7 @@ int _PARSER_PRINT_OBJ(JSON_COMPONENTS*obj,int level){
                 break;
             case 2:
                 float v = *(float*)value->value;
-                printf("\x1b[1;32m[FLOAT]\033[0m%.7g",v);
+                printf("%s:\x1b[1;32m[FLOAT]\033[0m%.7g",value->tag,v);
                 if(v==(int)v) printf(".0");
                 printf("\n");
                 break;
@@ -466,16 +552,15 @@ int _PARSER_PRINT_OBJ(JSON_COMPONENTS*obj,int level){
     return 0;
 }
 
-int PARSER_PRINT(JSON*json){
-    JSON_COMPONENTS*v=(*json).value;//JSON_ELEMENT
-    const const unsigned char JSONTYPE = v->TYPE_VALUE;
-    if(JSONTYPE==5){//JSON_ARRAY
+int PARSER_PRINT(JSON_COMPONENTS*json){
+    if(json==NULL) return 0;
+    if(json->TYPE_VALUE==T_ARRAY){//JSON_ARRAY
         printf("\033[0;33m[ARRAY][\033[0m\n");
-        _PARSER_PRINT_ARR(v,0);
+        _PARSER_PRINT_ARR(json,0);
     }else{//JSON_OBJECT
         //head출력
         printf("\033[38;2;255;128;0m[OBJECT]{\033[0m\n");
-        _PARSER_PRINT_OBJ(v,0);
+        _PARSER_PRINT_OBJ(json,0);
     }
     return 0;
 }
