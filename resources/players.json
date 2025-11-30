@@ -33,8 +33,8 @@
         "name": "stone123",
         "info": {
             "isban": false,
-            "ip": ["rrr"],
-            "deviceid": ["reter"]
+            "ip": [],
+            "deviceid": []
         },
         "money": 0
     },

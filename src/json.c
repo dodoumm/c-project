@@ -101,7 +101,7 @@ JSON_COMPONENTS* JSON_FIND_KEY(JSON_COMPONENTS* value, char* key) {
     if (key != NULL) {
         JSON_ELEMENT* p = value->value;
         while (p != NULL) {
-            if (!strcmp(((JSON_COMPONENTS*)(p->value))->tag, key)) {
+            if (p->value !=NULL&&!strcmp(((JSON_COMPONENTS*)(p->value))->tag, key)) {
                 return p->value;
             }
             p = p->linked;
@@ -114,6 +114,7 @@ JSON_COMPONENTS* JSON_FIND_KEY(JSON_COMPONENTS* value, char* key) {
 obj는 무조건 배열이어야합니다
 */
 JSON_COMPONENTS* JSON_FIND_INDEX(JSON_COMPONENTS* value, int index) {
+    if(value==NULL) return NULL;
     JSON_ELEMENT* p = value->value;
     for (int i = 0;i < index;i++) {
         if (p == NULL) return NULL;
@@ -122,8 +123,9 @@ JSON_COMPONENTS* JSON_FIND_INDEX(JSON_COMPONENTS* value, int index) {
     return p->value;
 }
 
+//array 반환
 JSON_COMPONENTS JSON_FILTER_TYPE(JSON_COMPONENTS obj, unsigned char type) {
-    JSON_COMPONENTS res = { NULL,type,NULL,NULL };
+    JSON_COMPONENTS res = { NULL,T_ARRAY,NULL,NULL };
     if (obj.TYPE_VALUE == T_ARRAY || obj.TYPE_VALUE == T_OBJECT) {//유효한 타입
         JSON_ELEMENT* p = obj.value;
         JSON_ELEMENT* el = NULL;
@@ -151,6 +153,7 @@ JSON_COMPONENTS JSON_FILTER_TYPE(JSON_COMPONENTS obj, unsigned char type) {
 
 //find function -> 매개변수 json은 반드시 array 또는 object여야함, 아니라면 무조건 Null반환
 JSON_COMPONENTS* JSON_FIND_INT(int value, JSON_COMPONENTS* json, bool search_unlimited) {
+    if(json==NULL) return NULL;
     if (json->TYPE_VALUE == T_ARRAY) {//arr
         JSON_ELEMENT* el = json->value;
         while (1) {
@@ -172,6 +175,7 @@ JSON_COMPONENTS* JSON_FIND_INT(int value, JSON_COMPONENTS* json, bool search_unl
 };
 
 JSON_COMPONENTS* JSON_FIND_FLOAT(float value, JSON_COMPONENTS* json, bool search_unlimited) {
+    if(json==NULL) return NULL;
     if (json->TYPE_VALUE == 5) {//arr
         JSON_ELEMENT* el = json->value;
         while (1) {
@@ -197,6 +201,7 @@ JSON_COMPONENTS* JSON_FIND_FLOAT(float value, JSON_COMPONENTS* json, bool search
 };
 
 JSON_COMPONENTS* JSON_FIND_STRING(char* value, JSON_COMPONENTS* json, bool search_unlimited) {
+    if(json==NULL) return NULL;
     if (json->TYPE_VALUE == 5) {//arr
         JSON_ELEMENT* el = json->value;
         while (1) {

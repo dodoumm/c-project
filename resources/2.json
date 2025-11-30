@@ -1,3 +1,12 @@
-[
-    1,3,4,5,49,29,23.10001,29.45,"ee","ff",2147.5483647,9000234.0
-]
+{
+    "projectname":"json parser",
+    "github":"https://github.com/dodoumm/c-project",
+    "functions":[
+        "open json file and parse!",
+        "Includes the function to find, sort, and change values.",
+        "you can edit json and save"
+    ],
+    "caution":"Unicode is not supported. Only ASCII code!",
+    "samplefile":5,
+    "samplefunction":3
+}

@@ -155,7 +155,7 @@ PARSER_SINGLEDATA _PARSER_EXTRACTION(FILE* file) {
         }
         else INT[++i] = '\0';
         INT_INDEX = i;
-        printf("FLOAT : %s\n", INT);
+        //printf("FLOAT : %s\n", INT);
         *v = (float)atof(INT);
         return (PARSER_SINGLEDATA) { 2, v, ch };
     }
@@ -164,7 +164,6 @@ PARSER_SINGLEDATA _PARSER_EXTRACTION(FILE* file) {
 //앞에 { 가 나왔을때
 //array 와의 차이점: 키값이 존재, }로 끝남
 JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
-    if(tagkey==NULL) printf("\n\n\n\nDETECTED\n");
     JSON_ELEMENT* element = malloc(sizeof(JSON_ELEMENT));
     JSON_ELEMENT* element_CONST = element;//가장 처음 원소값
     JSON_COMPONENTS* components = new_JSON_OBJECT(tagkey, NULL, NULL);
@@ -173,12 +172,18 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
     char* key = NULL;
 
     int ch = _PARSER_NEXTCHAR(file);
+    if (ch == '}') {//빈 오브젝트
+        //비었으므로 안쓰는 값을 헤체
+        free(element_CONST);
+        element = NULL;
+        return components;
+    }
     while (1) {
+        //if(key!=NULL) printf("STRINGKEY : %s\n", v.value);
         if (ch == '\"') {
             if (key == NULL) {
                 //이 문자열은 tag(key)
                 v = _PARSER_STR(file);
-                //printf("STRINGKEY : %s\n", v.value);
                 if (v.TYPE_VALUE == 0) return NULL;
                 key = v.value;
                 ch = v.thischar;
@@ -212,8 +217,8 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 tempel = new_JSON_ELEMENT(res, NULL);
                 element->linked = tempel;
                 element = tempel;
-                printf("KEY:%s   |   ",key);
-                PARSER_PRINT_VALUE(res);
+                //printf("KEY:%s   |   ",key);
+                //PARSER_PRINT_VALUE(res);
                 key = NULL;
                 break;
             case 2:
@@ -223,8 +228,8 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 tempel = new_JSON_ELEMENT(res, NULL);
                 element->linked = tempel;
                 element = tempel;
-                printf("KEY:%s   |   ",key);
-                PARSER_PRINT_VALUE(res);
+                //printf("KEY:%s   |   ",key);
+                //PARSER_PRINT_VALUE(res);
                 key = NULL;
                 break;
             case 3:
@@ -234,8 +239,8 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 tempel = new_JSON_ELEMENT(res, NULL);
                 element->linked = tempel;
                 element = tempel;
-                printf("KEY:%s   |   ",key);
-                PARSER_PRINT_VALUE(res);
+                //printf("KEY:%s   |   ",key);
+                //PARSER_PRINT_VALUE(res);
                 key = NULL;
                 break;
             case 4:
@@ -244,8 +249,8 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 tempel = new_JSON_ELEMENT(res, NULL);
                 element->linked = tempel;
                 element = tempel;
-                printf("KEY:%s   |   ",key);
-                PARSER_PRINT_VALUE(res);
+                //printf("KEY:%s   |   ",key);
+                //PARSER_PRINT_VALUE(res);
                 key = NULL;
                 break;
             case 5://배열
@@ -253,8 +258,8 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 tempel = new_JSON_ELEMENT(res, NULL);
                 element->linked = tempel;
                 element = tempel;
-                printf("KEY:%s   |   ",key);
-                PARSER_PRINT_VALUE(res);
+                //printf("KEY:%s   |   ",key);
+                //PARSER_PRINT_VALUE(res);
                 key = NULL;
                 //res는 file의 해당 오브젝트의]까지 읽음-> 쉼표 읽고 다음 반복에서 다음 유효문자가 읽히도록 함
                 ch = fgetc(file);//, 바로 앞 문자
@@ -269,8 +274,8 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 tempel = new_JSON_ELEMENT(res, NULL);
                 element->linked = tempel;
                 element = tempel;
-                printf("KEY:%s   |   ",key);
-                PARSER_PRINT_VALUE(res);
+                //printf("KEY:%s   |   ",key);
+                //PARSER_PRINT_VALUE(res);
                 key = NULL;
                 //res는 file의 해당 오브젝트의}까지 읽음-> 쉼표 읽고 다음 반복에서 다음 유효문자가 읽히도록 함
                 ch = fgetc(file);//, 바로 앞 문자
@@ -324,7 +329,7 @@ JSON_COMPONENTS* _PARSER_ARR(FILE* file, char* tagkey) {
     ungetc(ch, file);//닫는 문자가 있는 자료형일때에는 되돌리지 않음
     while (1) {
         v = _PARSER_EXTRACTION(file);
-        printf("ARRE : %d\n",v.TYPE_VALUE);
+        //printf("ARRE : %d\n",v.TYPE_VALUE);
         ch = v.thischar;
         JSON_COMPONENTS* res;
         JSON_ELEMENT* tempel;
@@ -402,7 +407,7 @@ JSON_COMPONENTS* _PARSER_ARR(FILE* file, char* tagkey) {
 JSON_COMPONENTS* PARSER_PARSE(char* path) {
     FILE* file = fopen(path, "r");
     if (file == NULL) {
-        printf("파일을 읽을 수 없음");
+        printf("파일을 읽을 수 없음\n");
         return NULL;
     }
     JSON_COMPONENTS* json;
@@ -599,10 +604,201 @@ int PARSER_PRINT(JSON_COMPONENTS* json) {
         printf("\033[0;33m[ARRAY][\033[0m\n");
         _PARSER_PRINT_ARR(json, 0);
     }
-    else {//JSON_OBJECT
+    else if(json->TYPE_VALUE==T_OBJECT){//JSON_OBJECT
         //head출력
         printf("\033[38;2;255;128;0m[OBJECT]{\033[0m\n");
         _PARSER_PRINT_OBJ(json, 0);
+    }else return 1;
+    return 0;
+}
+
+
+
+int _PARSER_SAVE_ARR(FILE *file,JSON_COMPONENTS* array, int level,bool end){
+JSON_ELEMENT* v = array->value;
+    while (1) {
+        if (v == NULL) {
+            for (int i = level;i > 0;i--) {
+                fputs("    ",file);
+            }
+            if(!end){
+                //콤마
+                fputs("],\n",file);
+            }else fputs("]\n",file);
+            return 0;
+        }
+        for (int i = level + 1;i > 0;i--) {
+            fputs("    ",file);
+        }
+        JSON_COMPONENTS* value = v->value;
+        char *txt;
+        bool isc = v->linked!=NULL;//콤마를 찍어야되는지에 대한 여부
+        if (value != NULL) {
+            switch (value->TYPE_VALUE)
+            {
+            case 1:
+                txt = malloc(sizeof(char)*13);//int의 끝이 10자리임(부호1자리,\0 1자리)
+                sprintf(txt,"%d",*(int*)value->value);
+                fputs(txt,file);
+                if(isc){
+                    fputs(",\n",file);
+                }else fputc('\n',file);
+                free(txt);
+                break;
+            case 2:
+                txt = malloc(sizeof(char)*11);//float는 유효숫자 7까지(부호1자리,. 1자리,\0 1자리)
+                sprintf(txt,"%.7g",*(float*)value->value);
+                fputs(txt,file);
+                if(isc){
+                    fputs(",\n",file);
+                }else fputc('\n',file);
+                free(txt);
+                break;
+            case 3:
+                if(*(bool*)value->value==false){
+                    if(isc){
+                        fputs("false,\n",file);
+                    }else fputs("false\n",file);
+                }else{
+                    if(isc){
+                        fputs("true,\n",file);
+                    }else fputs("true\n",file);
+                }
+                break;
+            case 4:
+                fputc('\"',file);
+                fputs((char*)value->value,file);
+                if(isc){
+                    fputs("\",\n",file);
+                }else fputs("\"\n",file);
+                break;
+            case 5://배열
+                fputs("[\n",file);
+                _PARSER_SAVE_ARR(file,value, level + 1,!isc);
+                break;
+            case 6://객체
+                fputs("{\n",file);
+                _PARSER_SAVE_OBJ(file,value, level + 1,!isc);
+                break;
+            default:
+                break;
+            }
+        }
+        v = v->linked;
     }
+    return 0;
+}
+
+int _PARSER_SAVE_OBJ(FILE *file,JSON_COMPONENTS* obj, int level,bool end){
+JSON_ELEMENT* v = obj->value;
+    while (1) {
+        if (v == NULL) {
+
+            for (int i = level;i > 0;i--) {
+                fputs("    ",file);
+            }
+            if(!end){
+                //콤마
+                fputs("},\n",file);
+            }else fputs("}\n",file);
+            return 0;
+        }
+        for (int i = level + 1;i > 0;i--) {
+            fputs("    ",file);
+        }
+        JSON_COMPONENTS* value = v->value;
+        char *txt;
+        bool isc = v->linked!=NULL;//콤마를 찍어야되는지에 대한 여부
+        if (value != NULL) {
+            switch (value->TYPE_VALUE){
+            case 1:
+                fputc('\"',file);
+                fputs(value->tag,file);
+                fputs("\":",file);
+                txt = malloc(sizeof(char)*13);//int의 끝이 10자리임(부호1자리,\0 1자리)
+                sprintf(txt,"%d",*(int*)value->value);
+                fputs(txt,file);
+                if(isc){
+                    fputs(",\n",file);
+                }else fputc('\n',file);
+                free(txt);
+                break;
+            case 2:
+                fputc('\"',file);
+                fputs(value->tag,file);
+                fputs("\":",file);
+                txt = malloc(sizeof(char)*11);//float는 유효숫자 7까지(부호1자리,. 1자리,\0 1자리)
+                sprintf(txt,"%.7g",*(float*)value->value);
+                fputs(txt,file);
+                if(isc){
+                    fputs(",\n",file);
+                }else fputc('\n',file);
+                free(txt);
+                break;
+            case 3:
+                fputc('\"',file);
+                fputs(value->tag,file);
+                fputs("\":",file);
+                if(*(bool*)value->value==false){
+                fputs("false",file);
+                }else fputs("true",file);
+                if(isc){
+                    fputs(",\n",file);
+                }else fputc('\n',file);
+                break;
+            case 4:
+                fputc('\"',file);
+                fputs(value->tag,file);
+                fputs("\":\"",file);
+                fputs((char*)value->value,file);
+                if(isc){
+                    fputs("\",\n",file);
+                }else fputs("\"\n",file);
+                break;
+            case 5://배열
+                fputc('\"',file);
+                fputs(value->tag,file);
+                fputs("\":",file);
+                fputs("[\n",file);
+                _PARSER_SAVE_ARR(file,value, level + 1,!isc);
+                break;
+            case 6://객체
+                fputc('\"',file);
+                fputs(value->tag,file);
+                fputs("\":",file);
+                fputs("{\n",file);
+                _PARSER_SAVE_OBJ(file,value, level + 1,!isc);
+                break;
+            default:
+                break;
+            }
+        }
+        v = v->linked;
+    }
+    return 0;
+}
+
+int PARSER_SAVE(char*path, JSON_COMPONENTS* json){
+    FILE *file = fopen(path,"w");
+    if(file==NULL){
+        printf("파일 불러오기 실패");
+        return 1;
+    }
+    if (json == NULL){
+        fclose(file);
+        return 0;
+    }
+    if (json->TYPE_VALUE == T_ARRAY) {//JSON_ARRAY
+        fputs("[\n",file);
+        _PARSER_SAVE_ARR(file,json, 0,json->linked==NULL);
+    }else if(json->TYPE_VALUE==T_OBJECT){//JSON_OBJECT
+        //head출력
+        fputs("{\n",file);
+        _PARSER_SAVE_OBJ(file,json, 0,json->linked==NULL);
+    }else{
+        fclose(file);
+        return 1;
+    }
+    fclose(file);
     return 0;
 }

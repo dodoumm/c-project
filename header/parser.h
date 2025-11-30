@@ -26,3 +26,10 @@ int _PARSER_PRINT_ARR(JSON_COMPONENTS* array, int level);
 int _PARSER_PRINT_OBJ(JSON_COMPONENTS* obj, int level);
 
 int PARSER_PRINT(JSON_COMPONENTS* json);
+
+
+int _PARSER_SAVE_ARR(FILE *file,JSON_COMPONENTS* array, int level,bool end);
+
+int _PARSER_SAVE_OBJ(FILE *file,JSON_COMPONENTS* obj, int level,bool end);
+
+int PARSER_SAVE(char*path, JSON_COMPONENTS* json);
