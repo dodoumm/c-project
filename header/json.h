@@ -3,23 +3,22 @@
 #include <stdbool.h>
 
 typedef enum {
-    T_NONE,
+    T_NONE,//오류형 타입
     T_INT,
     T_FLOAT,
     T_BOOL,
     T_STRING,
     T_ARRAY,
-    T_OBJECT
+    T_OBJECT,
+    T_NULL
 } VTYPE;//valuetype
 
-
-//TYPE_ID = 1:int 2:float 3:bool 4:string 5:array 6:object
+//TYPE_ID = 1:int 2:float 3:bool 4:string 5:array 6:object 7:null
 typedef struct JSC {
     char* tag; //json의 키값(없을수도 있음)
     VTYPE TYPE_VALUE;//value의 타입
     void* value; //기본 타입중 하나 | array나 object일 경우 JSON_ELEMENT
     struct JSC* linked; //JSON_COMPONENTS
-    //unsigned char TYPE_LINK; //0:NULL
 } JSON_COMPONENTS;
 
 
@@ -29,6 +28,8 @@ typedef struct JSEL {
     JSON_COMPONENTS* value;
     struct JSEL* linked;
 } JSON_ELEMENT;
+
+JSON_COMPONENTS* new_JSON_NULL(char* tag, JSON_COMPONENTS* linked);
 
 JSON_COMPONENTS* new_JSON_INT(char* tag, int value, JSON_COMPONENTS* linked);
 
@@ -42,7 +43,9 @@ JSON_COMPONENTS* new_JSON_ARRAY(char* tag, JSON_ELEMENT* value, JSON_COMPONENTS*
 
 JSON_COMPONENTS* new_JSON_OBJECT(char* tag, JSON_ELEMENT* value, JSON_COMPONENTS* linked);
 
+
 JSON_ELEMENT* new_JSON_ELEMENT(JSON_COMPONENTS* value, JSON_ELEMENT* linked);
+
 
 //func
 

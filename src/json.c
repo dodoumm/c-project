@@ -13,7 +13,6 @@ JSON_COMPONENTS* new_JSON_INT(char* tag, int value, JSON_COMPONENTS* linked) {
     JSON_COMPONENTS* data = malloc(sizeof(JSON_COMPONENTS));
     data->tag = tag;
     data->TYPE_VALUE = T_INT;
-    //data->TYPE_LINK=linked?linked->TYPE_VALUE:0;
     data->linked = linked;
     data->value = v;
     return data;
@@ -25,7 +24,6 @@ JSON_COMPONENTS* new_JSON_FLOAT(char* tag, float value, JSON_COMPONENTS* linked)
     JSON_COMPONENTS* data = malloc(sizeof(JSON_COMPONENTS));
     data->tag = tag;
     data->TYPE_VALUE = T_FLOAT;
-    //data->TYPE_LINK=linked?linked->TYPE_VALUE:0;
     data->linked = linked;
     data->value = v;
     return data;
@@ -37,7 +35,6 @@ JSON_COMPONENTS* new_JSON_BOOL(char* tag, bool value, JSON_COMPONENTS* linked) {
     JSON_COMPONENTS* data = malloc(sizeof(JSON_COMPONENTS));
     data->tag = tag;
     data->TYPE_VALUE = T_BOOL;
-    //data->TYPE_LINK=linked?linked->TYPE_VALUE:0;
     data->linked = linked;
     data->value = v;
     return data;
@@ -47,7 +44,6 @@ JSON_COMPONENTS* new_JSON_STRING(char* tag, char* value, JSON_COMPONENTS* linked
     JSON_COMPONENTS* data = malloc(sizeof(JSON_COMPONENTS));
     data->tag = tag;
     data->TYPE_VALUE = T_STRING;
-    //data->TYPE_LINK=linked?linked->TYPE_VALUE:0;
     data->linked = linked;
     data->value = value;
     return data;
@@ -57,7 +53,6 @@ JSON_COMPONENTS* new_JSON_ARRAY(char* tag, JSON_ELEMENT* value, JSON_COMPONENTS*
     JSON_COMPONENTS* data = malloc(sizeof(JSON_COMPONENTS));
     data->tag = tag;
     data->TYPE_VALUE = T_ARRAY;
-    //data->TYPE_LINK=linked?linked->TYPE_VALUE:0;
     data->linked = linked;
     data->value = value;
     return data;
@@ -67,20 +62,28 @@ JSON_COMPONENTS* new_JSON_OBJECT(char* tag, JSON_ELEMENT* value, JSON_COMPONENTS
     JSON_COMPONENTS* data = malloc(sizeof(JSON_COMPONENTS));
     data->tag = tag;
     data->TYPE_VALUE = T_OBJECT;
-    //data->TYPE_LINK=linked?linked->TYPE_VALUE:0;
     data->linked = linked;
     data->value = value;
     return data;
 
+};
+
+JSON_COMPONENTS* new_JSON_NULL(char* tag, JSON_COMPONENTS* linked) {
+    JSON_COMPONENTS* data = malloc(sizeof(JSON_COMPONENTS));
+    data->tag = tag;
+    data->TYPE_VALUE = T_NULL;
+    data->linked = linked;
+    data->value = NULL;
+    return data;
 };
 
 JSON_ELEMENT* new_JSON_ELEMENT(JSON_COMPONENTS* value, JSON_ELEMENT* linked) {
     JSON_ELEMENT* data = malloc(sizeof(JSON_ELEMENT));
-    //data->TYPE_VALUE=7;
     data->linked = linked;
     data->value = value;
     return data;
 };
+
 
 int JSON_LENGTH(JSON_COMPONENTS* value) {
     if (value->TYPE_VALUE == T_ARRAY || value->TYPE_VALUE == T_OBJECT) {
@@ -151,6 +154,10 @@ JSON_COMPONENTS JSON_FILTER_TYPE(JSON_COMPONENTS obj, unsigned char type) {
 }
 
 
+/**
+ * find 함수의 search_unlimited는 효율성 측면에서 매우 나쁘기 때문에 추가하지 않았습니다.
+ */
+
 //find function -> 매개변수 json은 반드시 array 또는 object여야함, 아니라면 무조건 Null반환
 JSON_COMPONENTS* JSON_FIND_INT(int value, JSON_COMPONENTS* json, bool search_unlimited) {
     if(json==NULL) return NULL;
@@ -176,7 +183,7 @@ JSON_COMPONENTS* JSON_FIND_INT(int value, JSON_COMPONENTS* json, bool search_unl
 
 JSON_COMPONENTS* JSON_FIND_FLOAT(float value, JSON_COMPONENTS* json, bool search_unlimited) {
     if(json==NULL) return NULL;
-    if (json->TYPE_VALUE == 5) {//arr
+    if (json->TYPE_VALUE == T_ARRAY) {//arr
         JSON_ELEMENT* el = json->value;
         while (1) {
             while (1) {
@@ -186,7 +193,7 @@ JSON_COMPONENTS* JSON_FIND_FLOAT(float value, JSON_COMPONENTS* json, bool search
             }
         }
     }
-    else if (json->TYPE_VALUE == 6) {//object
+    else if (json->TYPE_VALUE == T_OBJECT) {//object
         JSON_ELEMENT* el = json->value;
         while (1) {
             while (1) {
@@ -202,7 +209,7 @@ JSON_COMPONENTS* JSON_FIND_FLOAT(float value, JSON_COMPONENTS* json, bool search
 
 JSON_COMPONENTS* JSON_FIND_STRING(char* value, JSON_COMPONENTS* json, bool search_unlimited) {
     if(json==NULL) return NULL;
-    if (json->TYPE_VALUE == 5) {//arr
+    if (json->TYPE_VALUE == T_ARRAY) {//arr
         JSON_ELEMENT* el = json->value;
         while (1) {
             while (1) {
@@ -212,7 +219,7 @@ JSON_COMPONENTS* JSON_FIND_STRING(char* value, JSON_COMPONENTS* json, bool searc
             }
         }
     }
-    else if (json->TYPE_VALUE == 6) {//object
+    else if (json->TYPE_VALUE == T_OBJECT) {//object
         JSON_ELEMENT* el = json->value;
         while (1) {
             while (1) {
@@ -225,6 +232,20 @@ JSON_COMPONENTS* JSON_FIND_STRING(char* value, JSON_COMPONENTS* json, bool searc
     else return NULL;
     return NULL;
 };
+JSON_COMPONENTS* JSON_FIND_BOOL(bool value, JSON_COMPONENTS* json, bool search_unlimited){
+    if(json==NULL) return NULL;
+    if(json->TYPE_VALUE==T_ARRAY||json->TYPE_VALUE==T_OBJECT){
+    JSON_ELEMENT* el = json->value;
+        while (1) {
+            while (1) {
+                if (el == NULL) return NULL;
+                if (((JSON_COMPONENTS*)(el->value))->TYPE_VALUE == T_BOOL && *(bool*)(((JSON_COMPONENTS*)el->value)->value) == value) return (JSON_COMPONENTS*)el->value;
+                el = el->linked;
+            }
+        }
+    }
+    return NULL;
+}
 
 //free
 void JSON_FREE(JSON_COMPONENTS* value) {

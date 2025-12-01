@@ -77,49 +77,58 @@ PARSER_SINGLEDATA _PARSER_EXTRACTION(FILE* file) {
             //문자열
             PARSER_SINGLEDATA str = _PARSER_STR(file);//thischar= : or ,
             char* getstr = str.value;
-            return (PARSER_SINGLEDATA) { 4, getstr, str.thischar };
+            return (PARSER_SINGLEDATA) { T_STRING, getstr, str.thischar };
         }
         else if (ch == '-') {//음수부호
             if (INT_INDEX == 0) {
                 INT[INT_INDEX++] = ch;
             }
-            else return (PARSER_SINGLEDATA) { 0, 0, ch };//마이너스 부호가 첫번째 위치가 아닌 곳에 존재
+            else return (PARSER_SINGLEDATA) { T_NONE, 0, ch };//마이너스 부호가 첫번째 위치가 아닌 곳에 존재
         }
         else if (ch > 47 && ch < 58) {//정수
             INT[INT_INDEX++] = ch;
         }
         else if (ch == '.') {//소수점
-            if (isfloat) return (PARSER_SINGLEDATA) { 0, 0, ch };//소수점 2개이므로 오류
+            if (isfloat) return (PARSER_SINGLEDATA) { T_NONE, 0, ch };//소수점 2개이므로 오류
             isfloat = true;
             INT[INT_INDEX++] = ch;
         }
         else if (ch == '[') {//array 열기
-            return (PARSER_SINGLEDATA) { 5, 0, ch };//객체,배열은 외부에서 처리
+            return (PARSER_SINGLEDATA) { T_ARRAY, 0, ch };//객체,배열은 외부에서 처리
         }
         else if (ch == '{') {//object 열기
-            return (PARSER_SINGLEDATA) { 6, 0, ch };//객체,배열은 외부에서 처리
+            return (PARSER_SINGLEDATA) { T_OBJECT, 0, ch };//객체,배열은 외부에서 처리
         }
         else {
             //bool 판별
             if (INT_INDEX == 0) {
                 //느슨한 판별(앞 한글자만 일치하면 됌)
-                if (ch == 't' || ch == 'T') {
+                if (ch == 't') {
                     bool* t = malloc(sizeof(bool));
                     *t = true;
                     while ((ch = fgetc(file)) != EOF) {//남은 글자 제거
                         if (ch == ',' || ch == ']' || ch == '}') {
-                            return (PARSER_SINGLEDATA) { 3, t, ch };
+                            return (PARSER_SINGLEDATA) { T_BOOL, t, ch };
                         }
                         else if (ch == ':') return (PARSER_SINGLEDATA) { 0, 0, ch };//키값은 string만 가능하므로 오류
                     }
                     return (PARSER_SINGLEDATA) { 0, 0, ch };//끝을 찾을 수 없음
                 }
-                if (ch == 'f' || ch == 'F') {
+                if (ch == 'f') {
                     bool* t = malloc(sizeof(bool));
                     *t = false;
                     while ((ch = fgetc(file)) != EOF) {//남은 글자 제거
                         if (ch == ',' || ch == ']' || ch == '}') {
-                            return (PARSER_SINGLEDATA) { 3, t, ch };
+                            return (PARSER_SINGLEDATA) { T_BOOL, t, ch };
+                        }
+                        else if (ch == ':') return (PARSER_SINGLEDATA) { 0, 0, ch };//키값은 string만 가능하므로 오류
+                    }
+                    return (PARSER_SINGLEDATA) { 0, 0, ch };//끝을 찾을 수 없음
+                }
+                if (ch == 'n') {//null
+                    while ((ch = fgetc(file)) != EOF) {//남은 글자 제거
+                        if (ch == ',' || ch == ']' || ch == '}') {
+                            return (PARSER_SINGLEDATA) { T_NULL, NULL, ch };
                         }
                         else if (ch == ':') return (PARSER_SINGLEDATA) { 0, 0, ch };//키값은 string만 가능하므로 오류
                     }
@@ -129,17 +138,17 @@ PARSER_SINGLEDATA _PARSER_EXTRACTION(FILE* file) {
             break;
         }
     }
-    if (INT_INDEX == 0) return (PARSER_SINGLEDATA) { 0, 0, ch };//유효한 문자가 없음
+    if (INT_INDEX == 0) return (PARSER_SINGLEDATA) { T_NONE, 0, ch };//유효한 문자가 없음
     if (!isfloat) {//정수(int) 반환
         INT[INT_INDEX] = '\0';
         int* v = malloc(sizeof(int));
         *v = atoi(INT);
-        return (PARSER_SINGLEDATA) { 1, v, ch };
+        return (PARSER_SINGLEDATA) { T_INT, v, ch };
     }
     else {//실수(float) 반환 (유효숫자 7개까지만 가능)
         int i = INT_INDEX - 1;//실제 index
         if (INT[i] == '.') {//마지막 글자가 .임->json 오류
-            return (PARSER_SINGLEDATA) { 0, 0, ch };
+            return (PARSER_SINGLEDATA) { T_NONE, 0, ch };
         }
         float* v = malloc(sizeof(double));
         bool isdeleted = false;
@@ -157,7 +166,7 @@ PARSER_SINGLEDATA _PARSER_EXTRACTION(FILE* file) {
         INT_INDEX = i;
         //printf("FLOAT : %s\n", INT);
         *v = (float)atof(INT);
-        return (PARSER_SINGLEDATA) { 2, v, ch };
+        return (PARSER_SINGLEDATA) { T_FLOAT, v, ch };
     }
 }
 
@@ -184,14 +193,14 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
             if (key == NULL) {
                 //이 문자열은 tag(key)
                 v = _PARSER_STR(file);
-                if (v.TYPE_VALUE == 0) return NULL;
+                if (v.TYPE_VALUE == T_NONE) return NULL;
                 key = v.value;
                 ch = v.thischar;
             }
             else {
                 //이 문자열은 value-> JSON_STRING
                 v = _PARSER_STR(file);
-                if (v.TYPE_VALUE == 0) return NULL;
+                if (v.TYPE_VALUE == T_NONE) return NULL;
                 JSON_COMPONENTS* res = new_JSON_STRING(key, v.value, NULL);
                 ch = v.thischar;
                 //
@@ -210,7 +219,18 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
             JSON_ELEMENT* tempel;
             switch (v.TYPE_VALUE)
             {
-            case 1:
+            case T_NULL:
+                res = new_JSON_NULL(key, NULL);
+                //v.value는 null임
+                //
+                tempel = new_JSON_ELEMENT(res, NULL);
+                element->linked = tempel;
+                element = tempel;
+                //printf("KEY:%s   |   ",key);
+                //PARSER_PRINT_VALUE(res);
+                key = NULL;
+                break;
+            case T_INT:
                 res = new_JSON_INT(key, *(int*)v.value, NULL);
                 free(v.value);//v.value는 res에서 복사되었고 더이상 쓸모가 없으므로 해체
                 //
@@ -221,7 +241,7 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 //PARSER_PRINT_VALUE(res);
                 key = NULL;
                 break;
-            case 2:
+            case T_FLOAT:
                 res = new_JSON_FLOAT(key, *(float*)v.value, NULL);
                 free(v.value);//v.value는 res에서 복사되었고 더이상 쓸모가 없으므로 해체
                 //
@@ -232,7 +252,7 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 //PARSER_PRINT_VALUE(res);
                 key = NULL;
                 break;
-            case 3:
+            case T_BOOL:
                 res = new_JSON_BOOL(key, *(bool*)v.value, NULL);
                 free(v.value);//v.value는 res에서 복사되었고 더이상 쓸모가 없으므로 해체
                 //
@@ -243,7 +263,7 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 //PARSER_PRINT_VALUE(res);
                 key = NULL;
                 break;
-            case 4:
+            case T_STRING:
                 res = new_JSON_STRING(key, v.value, NULL);//string값은 참조로 전달되기 때문에 해체x
                 //
                 tempel = new_JSON_ELEMENT(res, NULL);
@@ -253,7 +273,7 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 //PARSER_PRINT_VALUE(res);
                 key = NULL;
                 break;
-            case 5://배열
+            case T_ARRAY://배열
                 res = _PARSER_ARR(file, key);
                 tempel = new_JSON_ELEMENT(res, NULL);
                 element->linked = tempel;
@@ -269,7 +289,7 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 }
                 if (ch != ',' && ch != '}' && ch != ']') return NULL;//다음 문자가 쉼표가 아님->json형식 오류
                 break;
-            case 6://객체
+            case T_OBJECT://객체
                 res = _PARSER_OBJ(file, key);
                 tempel = new_JSON_ELEMENT(res, NULL);
                 element->linked = tempel;
@@ -326,7 +346,7 @@ JSON_COMPONENTS* _PARSER_ARR(FILE* file, char* tagkey) {
         element = NULL;
         return components;
     }
-    ungetc(ch, file);//닫는 문자가 있는 자료형일때에는 되돌리지 않음
+    ungetc(ch, file);
     while (1) {
         v = _PARSER_EXTRACTION(file);
         //printf("ARRE : %d\n",v.TYPE_VALUE);
@@ -335,7 +355,15 @@ JSON_COMPONENTS* _PARSER_ARR(FILE* file, char* tagkey) {
         JSON_ELEMENT* tempel;
         switch (v.TYPE_VALUE)
         {
-        case 1:
+        case T_NULL:
+            res = new_JSON_NULL(NULL, NULL);
+            //
+            tempel = new_JSON_ELEMENT(res, NULL);
+            element->linked = tempel;
+            element = tempel;
+            //v.value는 null
+            break;
+        case T_INT:
             res = new_JSON_INT(NULL, *(int*)v.value, NULL);
             //
             tempel = new_JSON_ELEMENT(res, NULL);
@@ -343,7 +371,7 @@ JSON_COMPONENTS* _PARSER_ARR(FILE* file, char* tagkey) {
             element = tempel;
             free(v.value);//v.value는 res에서 복사되었고 더이상 쓸모가 없으므로 해체
             break;
-        case 2:
+        case T_FLOAT:
             res = new_JSON_FLOAT(NULL, *(float*)v.value, NULL);
             free(v.value);//v.value는 res에서 복사되었고 더이상 쓸모가 없으므로 해체
             //
@@ -351,7 +379,7 @@ JSON_COMPONENTS* _PARSER_ARR(FILE* file, char* tagkey) {
             element->linked = tempel;
             element = tempel;
             break;
-        case 3:
+        case T_BOOL:
             res = new_JSON_BOOL(NULL, *(bool*)v.value, NULL);
             free(v.value);//v.value는 res에서 복사되었고 더이상 쓸모가 없으므로 해체
             //
@@ -359,14 +387,14 @@ JSON_COMPONENTS* _PARSER_ARR(FILE* file, char* tagkey) {
             element->linked = tempel;
             element = tempel;
             break;
-        case 4:
+        case T_STRING:
             res = new_JSON_STRING(NULL, v.value, NULL);//string값은 참조로 전달되기 때문에 해체x
             //
             tempel = new_JSON_ELEMENT(res, NULL);
             element->linked = tempel;
             element = tempel;
             break;
-        case 5://배열
+        case T_ARRAY://배열
             res = _PARSER_ARR(file, NULL);
             tempel = new_JSON_ELEMENT(res, NULL);
             element->linked = tempel;
@@ -378,7 +406,7 @@ JSON_COMPONENTS* _PARSER_ARR(FILE* file, char* tagkey) {
                 ch = nextchar;
             }
             break;
-        case 6://객체
+        case T_OBJECT://객체
             res = _PARSER_OBJ(file, NULL);
             tempel = new_JSON_ELEMENT(res, NULL);
             element->linked = tempel;
@@ -430,75 +458,81 @@ JSON_COMPONENTS* PARSER_PARSE(char* path) {
     return NULL;//끝낼 때까지 오브젝트 또는 배열의 시작이 안나옴
 }
 
-int PARSER_PRINT_VALUE(JSON_COMPONENTS* value) {
+void PARSER_PRINT_VALUE(JSON_COMPONENTS* value) {
     if(value==NULL){
         printf("[ NULL ]\n");
-        return 0;
+        return;
     }
     if (value->tag != NULL) {
         switch (value->TYPE_VALUE) {
-        case 1:
+        case T_NULL:
+            printf("%s:\x1b[1;34mNULL\033[0m\n", value->tag);
+            break;
+        case T_INT:
             printf("%s:\x1b[1;32m[INT]\033[0m%d\n", value->tag, *(int*)value->value);
             break;
-        case 2:
+        case T_FLOAT:
             float v = *(float*)value->value;
             printf("%s:\x1b[1;32m[FLOAT]\033[0m%.7g", value->tag, v);
             if (v == (int)v) printf(".0");
             printf("\n");
             break;
-        case 3:
+        case T_BOOL:
             printf("%s:\x1b[1;32m[BOOL]\033[0m%d\n", value->tag, *(bool*)value->value);
             break;
-        case 4:
-            printf("%s:\x1b[1;32m[STRING]\033[0m%s\n", value->tag, value->value);
+        case T_STRING:
+            printf("%s:\x1b[1;32m[STRING]\033[0m%s\n", value->tag, (char*)value->value);
             break;
-        case 5://배열
+        case T_ARRAY://배열
             printf("%s:\033[0;33m[ARRAY][\033[0m\n", value->tag);
             _PARSER_PRINT_ARR(value, 0);
             break;
-        case 6://객체
+        case T_OBJECT://객체
             printf("%s:\033[38;2;255;128;0m[OBJECT]\033[38;2;255;128;0m{\033[0m\n", value->tag);
             _PARSER_PRINT_OBJ(value, 0);
             break;
         default:
-            printf("NULL\n");
+            printf("ERROR\n");
             break;
         }
     }
     else {
         switch (value->TYPE_VALUE)
         {
-        case 1:
+        case T_NULL:
+            printf("\x1b[1;34mNULL\033[0m\n");
+            break;
+        case T_INT:
             printf("\x1b[1;32m[INT]\033[0m%d\n", *(int*)value->value);
             break;
-        case 2:
+        case T_FLOAT:
             float v = *(float*)value->value;
             printf("\x1b[1;32m[FLOAT]\033[0m%.7g", v);
             if (v == (int)v) printf(".0");
             printf("\n");
             break;
-        case 3:
+        case T_BOOL:
             printf("\x1b[1;32m[BOOL]\033[0m%d\n", *(bool*)value->value);
             break;
-        case 4:
+        case T_STRING:
             printf("\x1b[1;32m[STRING]\033[0m%s\n", (char*)value->value);
             break;
-        case 5://배열
+        case T_ARRAY://배열
             printf("\033[0;33m[ARRAY][\033[0m\n");
             _PARSER_PRINT_ARR(value, 0);
             break;
-        case 6://객체
+        case T_OBJECT://객체
             printf("\033[38;2;255;128;0m[OBJECT]\033[38;2;255;128;0m{\033[0m\n");
             _PARSER_PRINT_OBJ(value, 0);
             break;
         default:
-            printf("NULL\n");
+            printf("ERROR\n");
             break;
         }
     }
 }
 
-int _PARSER_PRINT_ARR(JSON_COMPONENTS* array, int level) {
+void _PARSER_PRINT_ARR(JSON_COMPONENTS* array, int level) {
     JSON_ELEMENT* v = array->value;
     while (1) {
         if (v == NULL) {
@@ -506,7 +540,7 @@ int _PARSER_PRINT_ARR(JSON_COMPONENTS* array, int level) {
                 printf("    ");
             }
             printf("\033[0;33m]\033[0m\n");
-            return 0;
+            return;
         }
         for (int i = level + 1;i > 0;i--) {
             printf("    ");
@@ -515,26 +549,29 @@ int _PARSER_PRINT_ARR(JSON_COMPONENTS* array, int level) {
         if (value != NULL) {
             switch (value->TYPE_VALUE)
             {
-            case 1:
+            case T_NULL:
+                printf("\x1b[1;34mNULL\033[0m\n");
+                break;
+            case T_INT:
                 printf("\x1b[1;32m[INT]\033[0m%d\n", *(int*)value->value);
                 break;
-            case 2:
+            case T_FLOAT:
                 float v = *(float*)value->value;
                 printf("\x1b[1;32m[FLOAT]\033[0m%.7g", v);
                 if (v == (int)v) printf(".0");
                 printf("\n");
                 break;
-            case 3:
+            case T_BOOL:
                 printf("\x1b[1;32m[BOOL]\033[0m%d\n", *(bool*)value->value);
                 break;
-            case 4:
+            case T_STRING:
                 printf("\x1b[1;32m[STRING]\033[0m%s\n", (char*)value->value);
                 break;
-            case 5://배열
+            case T_ARRAY://배열
                 printf("\033[0;33m[ARRAY][\033[0m\n");
                 _PARSER_PRINT_ARR(value, level + 1);
                 break;
-            case 6://객체
+            case T_OBJECT://객체
                 printf("\033[38;2;255;128;0m[OBJECT]\033[38;2;255;128;0m{\033[0m\n");
                 _PARSER_PRINT_OBJ(value, level + 1);
                 break;
@@ -545,10 +582,10 @@ int _PARSER_PRINT_ARR(JSON_COMPONENTS* array, int level) {
         }
         v = v->linked;
     }
-    return 0;
+    return;
 }
 
-int _PARSER_PRINT_OBJ(JSON_COMPONENTS* obj, int level) {
+void _PARSER_PRINT_OBJ(JSON_COMPONENTS* obj, int level) {
     JSON_ELEMENT* v = obj->value;
     while (1) {
         if (v == NULL) {
@@ -556,7 +593,7 @@ int _PARSER_PRINT_OBJ(JSON_COMPONENTS* obj, int level) {
                 printf("    ");
             }
             printf("\033[38;2;255;128;0m}\033[0m\n");
-            return 0;
+            return;
         }
         for (int i = level + 1;i > 0;i--) {
             printf("    ");
@@ -565,26 +602,29 @@ int _PARSER_PRINT_OBJ(JSON_COMPONENTS* obj, int level) {
         if (value != NULL) {
             switch (value->TYPE_VALUE)
             {
-            case 1:
+            case T_NULL:
+                printf("%s:\x1b[1;34mNULL\033[0m\n",value->tag);
+                break;
+            case T_INT:
                 printf("%s:\x1b[1;32m[INT]\033[0m%d\n", value->tag, *(int*)value->value);
                 break;
-            case 2:
+            case T_FLOAT:
                 float v = *(float*)value->value;
                 printf("%s:\x1b[1;32m[FLOAT]\033[0m%.7g", value->tag, v);
                 if (v == (int)v) printf(".0");
                 printf("\n");
                 break;
-            case 3:
+            case T_BOOL:
                 printf("%s:\x1b[1;32m[BOOL]\033[0m%d\n", value->tag, *(bool*)value->value);
                 break;
-            case 4:
-                printf("%s:\x1b[1;32m[STRING]\033[0m%s\n", value->tag, value->value);
+            case T_STRING:
+                printf("%s:\x1b[1;32m[STRING]\033[0m%s\n", value->tag, (char*)value->value);
                 break;
-            case 5://배열
+            case T_ARRAY://배열
                 printf("%s:\033[0;33m[ARRAY][\033[0m\n", value->tag);
                 _PARSER_PRINT_ARR(value, level + 1);
                 break;
-            case 6://객체
+            case T_OBJECT://객체
                 printf("%s:\033[38;2;255;128;0m[OBJECT]\033[38;2;255;128;0m{\033[0m\n", value->tag);
                 _PARSER_PRINT_OBJ(value, level + 1);
                 break;
@@ -595,11 +635,11 @@ int _PARSER_PRINT_OBJ(JSON_COMPONENTS* obj, int level) {
         }
         v = v->linked;
     }
-    return 0;
+    return;
 }
 
-int PARSER_PRINT(JSON_COMPONENTS* json) {
-    if (json == NULL) return 0;
+void PARSER_PRINT(JSON_COMPONENTS* json) {
+    if (json == NULL) return;
     if (json->TYPE_VALUE == T_ARRAY) {//JSON_ARRAY
         printf("\033[0;33m[ARRAY][\033[0m\n");
         _PARSER_PRINT_ARR(json, 0);
@@ -608,13 +648,13 @@ int PARSER_PRINT(JSON_COMPONENTS* json) {
         //head출력
         printf("\033[38;2;255;128;0m[OBJECT]{\033[0m\n");
         _PARSER_PRINT_OBJ(json, 0);
-    }else return 1;
-    return 0;
+    }
+    return;
 }
 
 
 
-int _PARSER_SAVE_ARR(FILE *file,JSON_COMPONENTS* array, int level,bool end){
+void _PARSER_SAVE_ARR(FILE *file,JSON_COMPONENTS* array, int level,bool end){
 JSON_ELEMENT* v = array->value;
     while (1) {
         if (v == NULL) {
@@ -625,7 +665,7 @@ JSON_ELEMENT* v = array->value;
                 //콤마
                 fputs("],\n",file);
             }else fputs("]\n",file);
-            return 0;
+            return;
         }
         for (int i = level + 1;i > 0;i--) {
             fputs("    ",file);
@@ -636,7 +676,12 @@ JSON_ELEMENT* v = array->value;
         if (value != NULL) {
             switch (value->TYPE_VALUE)
             {
-            case 1:
+            case T_NULL:
+                if(isc){
+                    fputs("null,\n",file);
+                }else fputs("null\n",file);
+                break;
+            case T_INT:
                 txt = malloc(sizeof(char)*13);//int의 끝이 10자리임(부호1자리,\0 1자리)
                 sprintf(txt,"%d",*(int*)value->value);
                 fputs(txt,file);
@@ -645,7 +690,7 @@ JSON_ELEMENT* v = array->value;
                 }else fputc('\n',file);
                 free(txt);
                 break;
-            case 2:
+            case T_FLOAT:
                 txt = malloc(sizeof(char)*11);//float는 유효숫자 7까지(부호1자리,. 1자리,\0 1자리)
                 sprintf(txt,"%.7g",*(float*)value->value);
                 fputs(txt,file);
@@ -654,7 +699,7 @@ JSON_ELEMENT* v = array->value;
                 }else fputc('\n',file);
                 free(txt);
                 break;
-            case 3:
+            case T_BOOL:
                 if(*(bool*)value->value==false){
                     if(isc){
                         fputs("false,\n",file);
@@ -665,18 +710,18 @@ JSON_ELEMENT* v = array->value;
                     }else fputs("true\n",file);
                 }
                 break;
-            case 4:
+            case T_STRING:
                 fputc('\"',file);
                 fputs((char*)value->value,file);
                 if(isc){
                     fputs("\",\n",file);
                 }else fputs("\"\n",file);
                 break;
-            case 5://배열
+            case T_ARRAY://배열
                 fputs("[\n",file);
                 _PARSER_SAVE_ARR(file,value, level + 1,!isc);
                 break;
-            case 6://객체
+            case T_OBJECT://객체
                 fputs("{\n",file);
                 _PARSER_SAVE_OBJ(file,value, level + 1,!isc);
                 break;
@@ -686,10 +731,10 @@ JSON_ELEMENT* v = array->value;
         }
         v = v->linked;
     }
-    return 0;
+    return;
 }
 
-int _PARSER_SAVE_OBJ(FILE *file,JSON_COMPONENTS* obj, int level,bool end){
+void _PARSER_SAVE_OBJ(FILE *file,JSON_COMPONENTS* obj, int level,bool end){
 JSON_ELEMENT* v = obj->value;
     while (1) {
         if (v == NULL) {
@@ -701,7 +746,7 @@ JSON_ELEMENT* v = obj->value;
                 //콤마
                 fputs("},\n",file);
             }else fputs("}\n",file);
-            return 0;
+            return;
         }
         for (int i = level + 1;i > 0;i--) {
             fputs("    ",file);
@@ -711,7 +756,15 @@ JSON_ELEMENT* v = obj->value;
         bool isc = v->linked!=NULL;//콤마를 찍어야되는지에 대한 여부
         if (value != NULL) {
             switch (value->TYPE_VALUE){
-            case 1:
+            case T_NULL:
+                fputc('\"',file);
+                fputs(value->tag,file);
+                fputs("\":",file);
+                if(isc){
+                    fputs("null,\n",file);
+                }else fputs("null\n",file);
+                break;
+            case T_INT:
                 fputc('\"',file);
                 fputs(value->tag,file);
                 fputs("\":",file);
@@ -723,7 +776,7 @@ JSON_ELEMENT* v = obj->value;
                 }else fputc('\n',file);
                 free(txt);
                 break;
-            case 2:
+            case T_FLOAT:
                 fputc('\"',file);
                 fputs(value->tag,file);
                 fputs("\":",file);
@@ -735,7 +788,7 @@ JSON_ELEMENT* v = obj->value;
                 }else fputc('\n',file);
                 free(txt);
                 break;
-            case 3:
+            case T_BOOL:
                 fputc('\"',file);
                 fputs(value->tag,file);
                 fputs("\":",file);
@@ -746,7 +799,7 @@ JSON_ELEMENT* v = obj->value;
                     fputs(",\n",file);
                 }else fputc('\n',file);
                 break;
-            case 4:
+            case T_STRING:
                 fputc('\"',file);
                 fputs(value->tag,file);
                 fputs("\":\"",file);
@@ -755,14 +808,14 @@ JSON_ELEMENT* v = obj->value;
                     fputs("\",\n",file);
                 }else fputs("\"\n",file);
                 break;
-            case 5://배열
+            case T_ARRAY://배열
                 fputc('\"',file);
                 fputs(value->tag,file);
                 fputs("\":",file);
                 fputs("[\n",file);
                 _PARSER_SAVE_ARR(file,value, level + 1,!isc);
                 break;
-            case 6://객체
+            case T_OBJECT://객체
                 fputc('\"',file);
                 fputs(value->tag,file);
                 fputs("\":",file);
@@ -775,18 +828,18 @@ JSON_ELEMENT* v = obj->value;
         }
         v = v->linked;
     }
-    return 0;
+    return;
 }
 
-int PARSER_SAVE(char*path, JSON_COMPONENTS* json){
+void PARSER_SAVE(char*path, JSON_COMPONENTS* json){
     FILE *file = fopen(path,"w");
     if(file==NULL){
         printf("파일 불러오기 실패");
-        return 1;
+        return;
     }
     if (json == NULL){
         fclose(file);
-        return 0;
+        return;
     }
     if (json->TYPE_VALUE == T_ARRAY) {//JSON_ARRAY
         fputs("[\n",file);
@@ -797,8 +850,8 @@ int PARSER_SAVE(char*path, JSON_COMPONENTS* json){
         _PARSER_SAVE_OBJ(file,json, 0,json->linked==NULL);
     }else{
         fclose(file);
-        return 1;
+        return;
     }
     fclose(file);
-    return 0;
+    return;
 }

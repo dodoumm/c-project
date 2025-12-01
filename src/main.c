@@ -14,14 +14,17 @@ void printarray(){
 void objectf(){
     JSON_COMPONENTS* info = PARSER_PARSE("resources/2.json");
     PARSER_PRINT(info);
-    printf("ㅡㅡㅡㅡㅡSORTED INTㅡㅡㅡㅡㅡ\n");
-    JSON_COMPONENTS sortedint = JSON_FILTER_TYPE(*info,T_INT);
-    PARSER_PRINT(&sortedint);
+    printf("ㅡㅡㅡㅡㅡFILTER INTㅡㅡㅡㅡㅡ\n");
+    JSON_COMPONENTS filter = JSON_FILTER_TYPE(*info,T_INT);
+    PARSER_PRINT(&filter);
+    printf("ㅡㅡㅡㅡㅡFILTER STRINGㅡㅡㅡㅡㅡ\n");
+    filter = JSON_FILTER_TYPE(*info,T_STRING);
+    PARSER_PRINT(&filter);
 }
 
 
 //가상의 게임에서 어느 플레이어를 밴하는 예제
-void testfunc(int ban_playerid) {
+void playerban(int ban_playerid) {
     //지금까지 저장된 baninfo를 확인합니다.
     JSON_COMPONENTS* baninfo = PARSER_PARSE("resources/baninfo.json");
     //정보
@@ -54,7 +57,6 @@ void testfunc(int ban_playerid) {
             continue;
         }
         if (*(int*)id->value == ban_playerid) {//플레이어 찾음
-            printf("NAME : %s\n", (char*)JSON_FIND_KEY(p->value, "name")->value);
             JSON_COMPONENTS* info = JSON_FIND_KEY(p->value, "info");
             if (info == NULL) return;
             JSON_COMPONENTS* getip = JSON_FIND_KEY(info, "ip");
@@ -69,7 +71,6 @@ void testfunc(int ban_playerid) {
             while (pp != NULL) {
                 now = pp->value;
                 if (now->TYPE_VALUE == T_STRING && !JSON_FIND_STRING(now->value, ipinfo, false)) {//새로운 아이피라면
-                    printf("NOWIP : %s",now->value);
                     JSON_ELEMENT* temp = ipinfo->value;//첫번째 id
                     ipinfo->value = new_JSON_ELEMENT(new_JSON_STRING(NULL, now->value, NULL), temp);
                 }
@@ -96,7 +97,8 @@ void testfunc(int ban_playerid) {
 
 int main() {
     //printarray();
-    objectf();
-    //testfunc(100002);
+    //objectf();
+    //playerban(100001);
+    //playerban(100004);
     return 0;
 }

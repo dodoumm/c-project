@@ -19,17 +19,17 @@ JSON_COMPONENTS* _PARSER_ARR(FILE* file, char* tagkey);
 
 JSON_COMPONENTS* PARSER_PARSE(char* path);
 
-int PARSER_PRINT_VALUE(JSON_COMPONENTS* value);
+void PARSER_PRINT_VALUE(JSON_COMPONENTS* value);
 
-int _PARSER_PRINT_ARR(JSON_COMPONENTS* array, int level);
+void _PARSER_PRINT_ARR(JSON_COMPONENTS* array, int level);
 
-int _PARSER_PRINT_OBJ(JSON_COMPONENTS* obj, int level);
+void _PARSER_PRINT_OBJ(JSON_COMPONENTS* obj, int level);
 
-int PARSER_PRINT(JSON_COMPONENTS* json);
+void PARSER_PRINT(JSON_COMPONENTS* json);
 
 
-int _PARSER_SAVE_ARR(FILE *file,JSON_COMPONENTS* array, int level,bool end);
+void _PARSER_SAVE_ARR(FILE *file,JSON_COMPONENTS* array, int level,bool end);
 
-int _PARSER_SAVE_OBJ(FILE *file,JSON_COMPONENTS* obj, int level,bool end);
+void _PARSER_SAVE_OBJ(FILE *file,JSON_COMPONENTS* obj, int level,bool end);
 
-int PARSER_SAVE(char*path, JSON_COMPONENTS* json);
+void PARSER_SAVE(char*path, JSON_COMPONENTS* json);
