@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <ctype.h>
 #include "json.h"
 #include "parser.h"
 
@@ -96,9 +95,13 @@ void playerban(int ban_playerid) {
 
 
 int main() {
-    //printarray();
-    //objectf();
-    //playerban(100001);
-    //playerban(100004);
+    
+    printf("########## 예제1 ##########\n");
+    printarray();
+    printf("########## 예제2 ##########\n");
+    objectf();
+    printf("########## 예제3 ##########\n");
+    playerban(100001);
+    playerban(100004);
     return 0;
 }

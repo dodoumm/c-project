@@ -9,11 +9,7 @@
 //공백제거용 함수,만약 공백이 아니더라도 자기자신을 반환 | 반환:마지막으로 읽은 문자
 int _PARSER_NEXTCHAR(FILE* file) {
     int ch = fgetc(file);
-    if (ch == ' ' || ch == '\n') {
-        while ((ch = fgetc(file)) != EOF) {//유효 문자까지 이동
-            if (ch != ' ' && ch != '\n') break;
-        }
-    }
+    if (ch<33) while ((ch = fgetc(file)) != EOF&&ch<33);//유효 문자까지 이동
     return ch;
 }
 
@@ -23,7 +19,6 @@ int _PARSER_NEXTCHAR(FILE* file) {
 PARSER_SINGLEDATA _PARSER_STR(FILE* file) {
     int ch;
     int STR_INDEX = 0;
-    //char*STR=malloc(110*sizeof(char));
     int slashes = 0;
     //
     long pos = ftell(file);
@@ -43,14 +38,12 @@ PARSER_SINGLEDATA _PARSER_STR(FILE* file) {
         }
         else slashes = 0;
     }
-    //printf("LENGTH : %d\n",length);
     fseek(file, pos, SEEK_SET);
 
     if (ended == false) return (PARSER_SINGLEDATA) { T_NONE, NULL, ch };
     char* STR = malloc((length + 1) * sizeof(char));
     for (int i = 0;i != length;i++) {
         ch = fgetc(file);
-        //printf("CH : %c\n",ch);
         if (ch < 0 || ch>127) {
             i += 1;
             continue;
@@ -59,7 +52,6 @@ PARSER_SINGLEDATA _PARSER_STR(FILE* file) {
         STR[i] = ch;
     }
     STR[length] = 0;//문자열 종료
-    //printf("STRING : %s\n",STR);
     ch = fgetc(file);//뒤에 "제거
     ch = _PARSER_NEXTCHAR(file);
     return (PARSER_SINGLEDATA) { T_STRING, STR, ch };
@@ -72,7 +64,7 @@ PARSER_SINGLEDATA _PARSER_EXTRACTION(FILE* file) {
     char* INT = malloc(110);
     bool isfloat = false;
     while ((ch = fgetc(file)) != EOF) {
-        if (ch == ' ' || ch == '\n') continue;
+        if (ch<33) continue; //제어문자 무시
         if (ch == '\"') {
             //문자열
             PARSER_SINGLEDATA str = _PARSER_STR(file);//thischar= : or ,
@@ -156,7 +148,6 @@ PARSER_SINGLEDATA _PARSER_EXTRACTION(FILE* file) {
             if (INT[i] == '.') isdeleted = true;
             INT[i] = '\0';
         }
-        //printf("fSTR : %s\n",INT);
         if (isdeleted || INT[i] == '.') {//소수점이 사라졌거나 마지막 글자가 .임
             INT[--i] = '.';
             INT[++i] = '0';
@@ -180,15 +171,15 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
 
     char* key = NULL;
 
-    int ch = _PARSER_NEXTCHAR(file);
+    char ch = _PARSER_NEXTCHAR(file);
     if (ch == '}') {//빈 오브젝트
         //비었으므로 안쓰는 값을 헤체
         free(element_CONST);
         element = NULL;
         return components;
     }
+    int testloop=0;
     while (1) {
-        //if(key!=NULL) printf("STRINGKEY : %s\n", v.value);
         if (ch == '\"') {
             if (key == NULL) {
                 //이 문자열은 tag(key)
@@ -205,7 +196,6 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 ch = v.thischar;
                 //
                 components->linked = res;
-                //components->TYPE_LINK=4;
                 components = res;
                 key = NULL;
             }
@@ -226,8 +216,6 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 tempel = new_JSON_ELEMENT(res, NULL);
                 element->linked = tempel;
                 element = tempel;
-                //printf("KEY:%s   |   ",key);
-                //PARSER_PRINT_VALUE(res);
                 key = NULL;
                 break;
             case T_INT:
@@ -237,8 +225,6 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 tempel = new_JSON_ELEMENT(res, NULL);
                 element->linked = tempel;
                 element = tempel;
-                //printf("KEY:%s   |   ",key);
-                //PARSER_PRINT_VALUE(res);
                 key = NULL;
                 break;
             case T_FLOAT:
@@ -248,8 +234,6 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 tempel = new_JSON_ELEMENT(res, NULL);
                 element->linked = tempel;
                 element = tempel;
-                //printf("KEY:%s   |   ",key);
-                //PARSER_PRINT_VALUE(res);
                 key = NULL;
                 break;
             case T_BOOL:
@@ -259,8 +243,6 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 tempel = new_JSON_ELEMENT(res, NULL);
                 element->linked = tempel;
                 element = tempel;
-                //printf("KEY:%s   |   ",key);
-                //PARSER_PRINT_VALUE(res);
                 key = NULL;
                 break;
             case T_STRING:
@@ -269,8 +251,6 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 tempel = new_JSON_ELEMENT(res, NULL);
                 element->linked = tempel;
                 element = tempel;
-                //printf("KEY:%s   |   ",key);
-                //PARSER_PRINT_VALUE(res);
                 key = NULL;
                 break;
             case T_ARRAY://배열
@@ -278,12 +258,10 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 tempel = new_JSON_ELEMENT(res, NULL);
                 element->linked = tempel;
                 element = tempel;
-                //printf("KEY:%s   |   ",key);
-                //PARSER_PRINT_VALUE(res);
                 key = NULL;
                 //res는 file의 해당 오브젝트의]까지 읽음-> 쉼표 읽고 다음 반복에서 다음 유효문자가 읽히도록 함
                 ch = fgetc(file);//, 바로 앞 문자
-                if (ch == ' ' || ch == '\n') {
+                if (ch<33) {//제어문자 밑 공백이라면
                     int nextchar = _PARSER_NEXTCHAR(file);
                     ch = nextchar;
                 }
@@ -294,12 +272,10 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
                 tempel = new_JSON_ELEMENT(res, NULL);
                 element->linked = tempel;
                 element = tempel;
-                //printf("KEY:%s   |   ",key);
-                //PARSER_PRINT_VALUE(res);
                 key = NULL;
                 //res는 file의 해당 오브젝트의}까지 읽음-> 쉼표 읽고 다음 반복에서 다음 유효문자가 읽히도록 함
                 ch = fgetc(file);//, 바로 앞 문자
-                if (ch == ' ' || ch == '\n') {
+                if (ch<33) {//제어문자 밑 공백이라면
                     int nextchar = _PARSER_NEXTCHAR(file);
                     ch = nextchar;
                 }
@@ -312,7 +288,7 @@ JSON_COMPONENTS* _PARSER_OBJ(FILE* file, char* tagkey) {
         if (ch == ',') {
             //다음 key값을 받을 차례
             ch = fgetc(file);//, 바로 앞 문자
-            if (ch == ' ' || ch == '\n') {
+            if (ch<33) {//제어문자 밑 공백이라면
                 int nextchar = _PARSER_NEXTCHAR(file);
                 ch = nextchar;
             }
@@ -339,7 +315,6 @@ JSON_COMPONENTS* _PARSER_ARR(FILE* file, char* tagkey) {
     PARSER_SINGLEDATA v;//하나의 값을 가져오는 원소
 
     int ch = _PARSER_NEXTCHAR(file);
-    //printf("ch | %c\n",ch);
     if (ch == ']') {//빈 배열
         //비었으므로 안쓰는 값을 헤체
         free(element_CONST);
@@ -349,7 +324,6 @@ JSON_COMPONENTS* _PARSER_ARR(FILE* file, char* tagkey) {
     ungetc(ch, file);
     while (1) {
         v = _PARSER_EXTRACTION(file);
-        //printf("ARRE : %d\n",v.TYPE_VALUE);
         ch = v.thischar;
         JSON_COMPONENTS* res;
         JSON_ELEMENT* tempel;
@@ -401,7 +375,7 @@ JSON_COMPONENTS* _PARSER_ARR(FILE* file, char* tagkey) {
             element = tempel;
             //res는 file의 해당 배열의]까지 읽음-> 쉼표 읽고 다음 반복에서 다음 유효문자가 읽히도록 함
             ch = fgetc(file);//, 바로 앞 문자
-            if (ch == ' ' || ch == '\n') {
+            if (ch<33) {//제어문자 밑 공백이라면
                 int nextchar = _PARSER_NEXTCHAR(file);
                 ch = nextchar;
             }
@@ -413,7 +387,7 @@ JSON_COMPONENTS* _PARSER_ARR(FILE* file, char* tagkey) {
             element = tempel;
             //res는 file의 해당 배열의]까지 읽음-> 쉼표 읽고 다음 반복에서 다음 유효문자가 읽히도록 함
             ch = fgetc(file);//, 바로 앞 문자
-            if (ch == ' ' || ch == '\n') {
+            if (ch<33) {//제어문자 밑 공백이라면
                 int nextchar = _PARSER_NEXTCHAR(file);
                 ch = nextchar;
             }
