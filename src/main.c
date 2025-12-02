@@ -7,11 +7,13 @@
 
 void printarray(){
     JSON_COMPONENTS* info = PARSER_PARSE("resources/1.json");
+    if(info==NULL) return;
     PARSER_PRINT(info);
 }
 
 void objectf(){
     JSON_COMPONENTS* info = PARSER_PARSE("resources/2.json");
+    if(info==NULL) return;
     PARSER_PRINT(info);
     printf("ㅡㅡㅡㅡㅡFILTER INTㅡㅡㅡㅡㅡ\n");
     JSON_COMPONENTS filter = JSON_FILTER_TYPE(*info,T_INT);
@@ -95,7 +97,6 @@ void playerban(int ban_playerid) {
 
 
 int main() {
-    
     printf("########## 예제1 ##########\n");
     printarray();
     printf("########## 예제2 ##########\n");
