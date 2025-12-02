@@ -1,0 +1,52 @@
+[
+    {
+        "id": 100001,
+        "name": "dodoumm",
+        "info": {
+            "isban": false,
+            "ip": [ "213.342.422.1" ],
+            "deviceid": [ "72624e8043784626a17ea9daec7c834c","c9372d27ef55448ba123f4987a856f7e" ]
+        },
+        "money": 999128
+    },
+    {
+        "id": 100002,
+        "name": "mintchoco",
+        "info": {
+            "isban": true,
+            "ip": [ "10.24.52.88", "10.24.52.89" ],
+            "deviceid": [ "d6a235945d234517b42cbec9f2d12ff1" ]
+        },
+        "money": 2500
+    },
+    {
+        "id": 100003,
+        "name": "stone123",
+        "info": {
+            "isban": false,
+            "ip": [],
+            "deviceid": []
+        },
+        "money": 0
+    },
+    {
+        "id": 100004,
+        "name": "pixelrunner",
+        "info": {
+            "isban": false,
+            "ip": [ "172.16.254.1" ],
+            "deviceid": [ "c9372d27ef55448ba123f4987a856f7e", "592e3bb3f2eb42108355473e302fc5ef" ]
+        },
+        "money": 88888
+    },
+    {
+        "id": 100005,
+        "name": "lemon",
+        "info": {
+            "isban": false,
+            "ip": [ "192.168.1.10" ],
+            "deviceid": [ "fa34927f874354948a8c5a2ee3fd41bc" ]
+        },
+        "money": 500
+    }
+]

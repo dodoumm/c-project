@@ -1,0 +1,16 @@
+{
+    "projectname":"json parser",
+    "github":"https://github.com/dodoumm/c-project",
+    "functions":[
+        "open json file and parse!",
+        "Includes the function to find, sort, and change values.",
+        "you can edit json and save"
+    ],
+    "caution":"Unicode is not supported. Only ASCII code!",
+    "samplefile":5,
+    "samplefunction":3,
+    "major_commit":11,
+    "version":1.0,
+    "ttt":null
+}
+

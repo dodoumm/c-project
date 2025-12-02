@@ -1,0 +1,15 @@
+{
+    "shopid\"\\\\\"\\\\\" lll": "shop1",
+    "name": "상점\"",
+    "moneyid": "won",
+    "int":456,
+    "items": [
+        {
+            "item": "book",
+            "lore": [
+                "0",
+                "1"
+            ]
+        }
+    ]
+}
